@@ -1,0 +1,55 @@
+# Task ID: 13
+# Title: Implement content safety filters
+# Status: pending
+# Dependencies: 3
+# Priority: high
+# Description: Create a comprehensive content safety system to prevent misuse
+# Details:
+Enhance the NSFW detection system with both OpenAI moderation API and perceptual hash-based nudity detection. Implement blocking logic for content with safety scores > 0.8. Create appropriate user messaging for rejected content. Add logging for safety violations for review. Implement watermarking for free tier content until review to prevent misuse.
+
+# Test Strategy:
+Test with various content including edge cases. Verify both OpenAI moderation and perceptual hash detection work correctly. Confirm blocking logic prevents inappropriate content from processing. Test user messaging for clarity. Verify watermarking is applied correctly for free tier users.
+
+# Subtasks:
+## 13.1. Integrate OpenAI moderation API [pending]
+### Dependencies: None
+### Description: Implement text content moderation using OpenAI's moderation API
+### Details:
+Create a service that interfaces with OpenAI's moderation API. Handle API responses and categorize content based on moderation scores. Implement error handling and fallback mechanisms for API failures.
+
+## 13.2. Implement perceptual hash-based nudity detection [pending]
+### Dependencies: None
+### Description: Set up imghash library for visual content moderation
+### Details:
+Integrate imghash library for perceptual hash comparison. Create a database of hashes for known inappropriate content. Implement efficient comparison algorithms for uploaded images against the hash database. Set up infrastructure for hash database updates.
+
+## 13.3. Configure moderation thresholds [pending]
+### Dependencies: None
+### Description: Establish and implement configurable thresholds for content moderation
+### Details:
+Create a configuration system for safety score thresholds. Set default threshold at 0.8 as specified. Implement different threshold levels for different content categories if needed. Create an admin interface for threshold adjustments.
+
+## 13.4. Develop user messaging for rejected content [pending]
+### Dependencies: None
+### Description: Create clear and appropriate messaging when content is rejected
+### Details:
+Design user-friendly error messages explaining content rejection reasons. Implement UI components to display these messages. Ensure messages are informative but don't provide exploitation guidance. Support multiple languages for error messages.
+
+## 13.5. Implement safety violation logging [pending]
+### Dependencies: None
+### Description: Create comprehensive logging system for content safety violations
+### Details:
+Design and implement a logging schema for safety violations. Store relevant metadata including user ID, content hash, violation type, and timestamp. Create an admin dashboard for reviewing flagged content. Implement data retention policies for violation logs.
+
+## 13.6. Implement watermarking for free tier content [pending]
+### Dependencies: None
+### Description: Add watermarking system for free tier content until review
+### Details:
+Design a watermarking solution that doesn't interfere with content quality. Implement watermark application process for free tier user content. Create a review system to remove watermarks after content approval. Ensure watermarks are difficult to remove without degrading image quality.
+
+## 13.7. Integrate moderation workflow into content pipeline [pending]
+### Dependencies: None
+### Description: Connect all moderation components into the content processing pipeline
+### Details:
+Integrate moderation checks at appropriate points in the content creation workflow. Ensure moderation happens before resource-intensive processing. Implement caching to prevent redundant moderation checks. Create a unified API for content safety validation that combines all moderation techniques.
+

@@ -1,0 +1,49 @@
+# Task ID: 4
+# Title: Develop avatar generation service
+# Status: pending
+# Dependencies: 3
+# Priority: high
+# Description: Create a service to transform selfies into comic avatars using GPT-Image-1
+# Details:
+Implement a service that sends the uploaded selfie to Replicate's GPT-Image-1 API with appropriate system prompts to generate a full-body comic avatar at 1024x1024 resolution. Create a polling mechanism to check job status until completion. Implement retry logic with exponential backoff (max 2 attempts). Store the resulting avatar URL and associate it with the user's session. Handle error cases and provide appropriate feedback. Implement compensation logic to refund credits on failed generations.
+
+# Test Strategy:
+Test with various selfie inputs. Verify successful API calls to Replicate and proper handling of responses. Test polling mechanism and retry logic. Confirm proper storage of avatar URLs. Test error handling for failed generations. Verify credit refund process works correctly when avatar generation fails.
+
+# Subtasks:
+## 4.1. Replicate GPT-Image-1 API Integration [pending]
+### Dependencies: None
+### Description: Implement the integration with Replicate's API for GPT-Image-1 model
+### Details:
+Create API client for Replicate. Implement authentication using environment variables for API keys. Set up the request payload structure for GPT-Image-1 model. Implement proper error handling for API responses.
+
+## 4.2. System Prompt Design [pending]
+### Dependencies: None
+### Description: Design and implement effective system prompts for comic avatar generation
+### Details:
+Research optimal prompting techniques for GPT-Image-1. Design system prompts that consistently produce full-body comic avatars. Include parameters for 1024x1024 resolution. Test various prompt formulations to ensure consistent quality and style.
+
+## 4.3. Polling and Retry Mechanism [pending]
+### Dependencies: None
+### Description: Implement job status polling and retry logic
+### Details:
+Create a polling service to check generation job status at appropriate intervals. Implement exponential backoff strategy for polling (increasing wait times between checks). Add retry logic for failed API calls with maximum 2 retry attempts. Handle timeouts and long-running jobs appropriately.
+
+## 4.4. Avatar Asset Storage [pending]
+### Dependencies: None
+### Description: Implement storage for generated avatar assets
+### Details:
+Create a storage mechanism for avatar URLs returned by Replicate. Associate avatars with user sessions in the database. Implement cleanup process for orphaned or expired avatar assets. Ensure proper indexing for efficient retrieval.
+
+## 4.5. Error Handling [pending]
+### Dependencies: None
+### Description: Implement comprehensive error handling for the avatar generation process
+### Details:
+Create error classification system for different failure modes (API errors, timeout, content policy violations, etc.). Implement appropriate user-facing error messages. Log detailed error information for debugging. Create monitoring alerts for critical error patterns.
+
+## 4.6. Compensation Logic [pending]
+### Dependencies: None
+### Description: Implement credit refund system for failed generations
+### Details:
+Create a compensation service to refund credits when avatar generation fails. Implement transaction logging for all credit refunds. Add admin dashboard component to review and manage compensation events. Ensure proper synchronization to prevent duplicate refunds.
+

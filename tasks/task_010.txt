@@ -1,0 +1,55 @@
+# Task ID: 10
+# Title: Implement credits and billing system
+# Status: pending
+# Dependencies: 2
+# Priority: high
+# Description: Create a credit-based system with Stripe integration for paid subscriptions
+# Details:
+Implement a credit system where each render consumes one credit. Set up free tier with 5 initial credits. Integrate Stripe for subscription management with appropriate plans. Create webhook handlers to update user credits when payments are processed. Implement credit checking before rendering and appropriate messaging when credits are depleted. Design and implement the account page showing credit balance and subscription status.
+
+# Test Strategy:
+Test credit deduction for various user actions. Verify Stripe integration for subscription creation, updates, and cancellations. Test webhook handlers with Stripe test events. Confirm proper credit updates after payments. Test credit limit enforcement and messaging.
+
+# Subtasks:
+## 10.1. Implement user credit tracking and management [pending]
+### Dependencies: None
+### Description: Create database schema and logic for tracking user credits
+### Details:
+Add credits field to user model. Implement functions for checking, adding, and deducting credits. Set up initial credit allocation (5 credits) for new users. Create API endpoints for credit operations.
+
+## 10.2. Integrate Stripe subscription management [pending]
+### Dependencies: None
+### Description: Set up Stripe integration for handling paid subscriptions
+### Details:
+Configure Stripe API keys and SDK. Create subscription plans in Stripe dashboard. Implement subscription creation flow. Build checkout page integration. Store subscription IDs and status in user records. Handle subscription upgrades, downgrades, and cancellations.
+
+## 10.3. Implement Stripe webhook handlers [pending]
+### Dependencies: None
+### Description: Create webhook endpoints to process Stripe events
+### Details:
+Set up webhook endpoint with proper authentication. Implement handlers for payment_succeeded, subscription_created, subscription_updated, and subscription_cancelled events. Update user credits based on subscription tier when payments are processed. Add logging for webhook events.
+
+## 10.4. Implement credit deduction logic [pending]
+### Dependencies: None
+### Description: Create system to check and deduct credits for render operations
+### Details:
+Add credit check before starting render process. Implement credit deduction on successful render. Create error handling for insufficient credits. Design and implement user messaging for low or depleted credits. Add transaction logging for all credit operations.
+
+## 10.5. Build account page with credit and subscription information [pending]
+### Dependencies: None
+### Description: Create UI for users to view and manage credits and subscriptions
+### Details:
+Design account page layout showing current credit balance. Display subscription status and plan details. Add subscription management options (upgrade, downgrade, cancel). Show credit usage history. Implement subscription renewal information.
+
+## 10.6. Create admin interface for manual credit adjustments [pending]
+### Dependencies: None
+### Description: Implement admin tools for managing user credits
+### Details:
+Build admin panel for viewing user credit balances. Create interface for manually adding or removing credits. Implement audit logging for all manual credit adjustments. Add search functionality to find users by email or ID.
+
+## 10.7. Implement comprehensive testing for billing system [pending]
+### Dependencies: None
+### Description: Create test suite for credit and subscription functionality
+### Details:
+Write unit tests for credit operations. Create integration tests for Stripe API interactions. Set up webhook testing with Stripe test events. Implement end-to-end tests for subscription flows. Test credit limit enforcement and error scenarios.
+

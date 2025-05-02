@@ -1,0 +1,55 @@
+# Task ID: 5
+# Title: Implement theme selection interface
+# Status: pending
+# Dependencies: 4
+# Priority: high
+# Description: Create UI for displaying and selecting theme options for the scene
+# Details:
+Design and implement a theme selection interface showing 3 theme thumbnails (city, fantasy, neon). Create hover previews for each theme option. Implement theme selection logic and state management. Ensure the selected theme is properly stored for the next step. Design should follow the card-based progress UI pattern specified in the PRD.
+
+# Test Strategy:
+Test theme selection UI for proper rendering and interaction. Verify hover previews work correctly. Confirm selected theme is properly stored and passed to the next step. Test responsive behavior across different screen sizes.
+
+# Subtasks:
+## 5.1. Create UI/UX design for theme selection component [pending]
+### Dependencies: None
+### Description: Design the theme selection interface according to the card-based progress UI pattern
+### Details:
+Create wireframes and mockups for the theme selection component showing the 3 themes (city, fantasy, neon). Include hover states, selection indicators, and responsive layouts. Ensure design follows the TSD specifications and aligns with the overall application style.
+
+## 5.2. Generate static thumbnails for theme options [pending]
+### Dependencies: None
+### Description: Create representative thumbnail images for each theme option
+### Details:
+Design and generate static thumbnail images for city, fantasy, and neon themes. Thumbnails should clearly represent the visual style of each theme. Optimize images for web display and ensure consistent dimensions across all thumbnails.
+
+## 5.3. Implement hover preview functionality [pending]
+### Dependencies: None
+### Description: Create interactive hover previews for each theme option
+### Details:
+Develop the hover preview mechanism that shows an expanded view or additional information when a user hovers over a theme thumbnail. Include smooth transitions and ensure previews are accessible and don't interfere with other UI elements.
+
+## 5.4. Create theme prompt mapping system [pending]
+### Dependencies: None
+### Description: Develop mapping between theme selections and prompt variations
+### Details:
+Implement a system that maps each theme selection to appropriate prompt variations for the AI generation pipeline. Define prompt templates for each theme that can be populated with scene content. Document the mapping structure for future theme additions.
+
+## 5.5. Implement theme selection state management [pending]
+### Dependencies: None
+### Description: Create state management for theme selection and persistence
+### Details:
+Develop state management logic to track the selected theme. Ensure the selection is properly stored and can be retrieved for subsequent steps in the workflow. Implement proper validation and default theme handling.
+
+## 5.6. Integrate theme selection with render pipeline [pending]
+### Dependencies: None
+### Description: Connect theme selection component with the rendering system
+### Details:
+Integrate the theme selection interface with the render pipeline so that the selected theme properly influences the generated comic. Ensure theme data is correctly passed to subsequent generation steps. Test the end-to-end flow from selection to rendering.
+
+## 5.7. Implement responsive behavior for theme selection [pending]
+### Dependencies: None
+### Description: Ensure theme selection UI works across different screen sizes
+### Details:
+Adapt the theme selection interface for various screen sizes and devices. Implement responsive layout adjustments, touch-friendly interactions for mobile, and ensure accessibility standards are met across all viewport sizes.
+

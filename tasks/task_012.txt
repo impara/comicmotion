@@ -1,0 +1,73 @@
+# Task ID: 12
+# Title: Build admin dashboard
+# Status: pending
+# Dependencies: 10, 11
+# Priority: low
+# Description: Create an administrative interface for monitoring and managing the system based on the ComicMotion TSD
+# Details:
+Implement an admin dashboard showing the last 500 jobs with status, cost, and user ID. Create functionality to manually re-queue failed jobs or refund credits. Add filtering and sorting capabilities for job listings. Implement admin authentication with appropriate access controls. Design charts and metrics displays for system performance monitoring.
+
+# Test Strategy:
+Test admin dashboard with various job statuses and user scenarios. Verify re-queue and refund functionality works correctly. Test filtering and sorting options. Confirm access controls prevent unauthorized access. Test with large datasets to ensure performance.
+
+# Subtasks:
+## 12.1. Design admin dashboard UI layout [pending]
+### Dependencies: None
+### Description: Create wireframes and UI mockups for the admin dashboard according to ComicMotion TSD
+### Details:
+Design the overall layout of the admin dashboard including navigation, main content area, and key components. Follow ComicMotion's design system for consistency. Include mockups for desktop and mobile responsive views.
+
+## 12.2. Implement job listing component [pending]
+### Dependencies: None
+### Description: Build the component to display the last 500 jobs in the system
+### Details:
+Create a paginated table view displaying job information including job ID, submission time, completion time, status, cost, and user ID. Implement server-side pagination to handle large datasets efficiently.
+
+## 12.3. Add job filtering and sorting capabilities [pending]
+### Dependencies: None
+### Description: Implement filtering and sorting functionality for the job listing
+### Details:
+Add filters for job status, date range, user ID, and cost range. Implement column sorting for all relevant fields. Ensure filtering and sorting can be combined and persist across page navigation.
+
+## 12.4. Build job status and cost tracking [pending]
+### Dependencies: None
+### Description: Implement detailed view for job status and cost information
+### Details:
+Create a detailed job view showing complete status history, processing time, resource usage, and cost breakdown. Include visualizations where appropriate to make the data more accessible.
+
+## 12.5. Implement manual job re-queue functionality [pending]
+### Dependencies: None
+### Description: Add ability for admins to manually re-queue failed jobs
+### Details:
+Create interface for selecting and re-queuing failed jobs. Implement confirmation flow and status updates. Ensure proper error handling and feedback mechanisms.
+
+## 12.6. Implement credit refund functionality [pending]
+### Dependencies: None
+### Description: Add ability for admins to issue refunds for job credits
+### Details:
+Build refund interface with amount selection, reason documentation, and confirmation flow. Integrate with the billing system to process actual refunds. Implement audit logging for all refund actions.
+
+## 12.7. Implement admin authentication and access control [pending]
+### Dependencies: None
+### Description: Set up secure authentication and role-based access control for admin users
+### Details:
+Implement admin login with MFA support. Create role-based permissions system with at least two levels: read-only and full access. Ensure all admin actions are properly logged for audit purposes.
+
+## 12.8. Create system performance monitoring visualizations [pending]
+### Dependencies: None
+### Description: Implement charts and metrics displays for monitoring system performance
+### Details:
+Design and implement real-time and historical charts for job processing rates, error rates, system resource utilization, and user activity. Include configurable date ranges and export capabilities.
+
+## 12.9. Integrate with backend APIs [pending]
+### Dependencies: None
+### Description: Connect the admin dashboard to the relevant backend services
+### Details:
+Implement API service layer to connect with job management, user management, and billing systems. Ensure proper error handling, loading states, and retry mechanisms.
+
+## 12.1. Perform end-to-end testing [pending]
+### Dependencies: None
+### Description: Conduct comprehensive testing of the admin dashboard
+### Details:
+Test all functionality with various job statuses, user scenarios, and edge cases. Verify performance with large datasets. Test access controls and security measures. Create automated test suite for regression testing.
+

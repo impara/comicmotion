@@ -1,0 +1,16 @@
+{
+  "name": "comicmotion-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "packageManager": "npm@10.5.0",
+  "scripts": {
+    "dev": "turbo run dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.2"
+  }
+}

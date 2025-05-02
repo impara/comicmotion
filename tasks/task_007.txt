@@ -1,0 +1,55 @@
+# Task ID: 7
+# Title: Develop animation service
+# Status: pending
+# Dependencies: 6
+# Priority: high
+# Description: Create a service to animate the generated scene into a short video
+# Details:
+Implement a service that sends the HD scene to Replicate's video-01-live API with default 'walk-forward' animation and mild camera pan. Support duration parameters (6s default, 10s for paid users). Implement polling for job completion. Transcode completed animations to H.264 MP4 at 30fps. Store the resulting video URL and associate it with the user's session. Handle error cases appropriately with compensation mechanisms to rollback scene on failure.
+
+# Test Strategy:
+Test animation generation with various scenes. Verify API calls to video-01-live work correctly. Test both duration options. Confirm proper transcoding to MP4 format. Verify video quality and framerate. Test error handling for failed animations. Verify compensation mechanisms work correctly.
+
+# Subtasks:
+## 7.1. Implement Minimax video-01-live API integration [pending]
+### Dependencies: None
+### Description: Create the service layer to communicate with Replicate's Minimax video-01-live API
+### Details:
+Develop API client for video-01-live with proper authentication, request formatting, and response handling. Support sending HD scene images as input. Configure default animation parameters including 'walk-forward' style and camera pan effects.
+
+## 7.2. Implement animation parameterization [pending]
+### Dependencies: None
+### Description: Support configurable animation parameters based on user tier
+### Details:
+Implement duration parameters (6s default for free users, 10s for paid users). Allow for future expansion of animation options. Create a parameter validation layer to ensure all inputs meet API requirements.
+
+## 7.3. Develop polling and retry logic [pending]
+### Dependencies: None
+### Description: Create robust job monitoring system for animation generation
+### Details:
+Implement polling mechanism to check animation job status. Add exponential backoff strategy to prevent API rate limiting. Implement retry logic for transient failures. Set appropriate timeouts for long-running jobs. Add logging for job progress tracking.
+
+## 7.4. Implement video transcoding [pending]
+### Dependencies: None
+### Description: Transcode animation outputs to standardized video format
+### Details:
+Create transcoding service to convert animation outputs to H.264 MP4 format at 30fps. Ensure consistent quality settings. Optimize for web playback. Add metadata to the video files. Test with various input formats to ensure compatibility.
+
+## 7.5. Develop asset storage integration [pending]
+### Dependencies: None
+### Description: Store and manage generated animation assets
+### Details:
+Implement storage service integration to save completed animations. Generate secure, time-limited access URLs. Associate videos with user sessions in the database. Implement cleanup policy for unused or temporary assets.
+
+## 7.6. Create error handling and compensation mechanisms [pending]
+### Dependencies: None
+### Description: Handle animation generation failures gracefully
+### Details:
+Implement comprehensive error handling for API failures, timeout issues, and invalid inputs. Create compensation mechanism to rollback scene on animation failure. Add detailed error logging for troubleshooting. Implement user-friendly error messages. Create alerting for critical failures.
+
+## 7.7. Develop end-to-end integration tests [pending]
+### Dependencies: None
+### Description: Create comprehensive tests for the animation service
+### Details:
+Develop integration tests covering the full animation workflow. Test with various scene inputs to verify compatibility. Verify proper handling of both success and failure scenarios. Test compensation mechanisms. Create performance benchmarks for animation generation time.
+

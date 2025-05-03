@@ -35,7 +35,7 @@ Use the existing MinIO configuration (Endpoint: http://192.168.86.214:9000, Buck
 ### Details:
 Validate file type (JPG/PNG only), file size (max 8MB), and image dimensions. Implement server-side validation to ensure client-side validation cannot be bypassed. Return appropriate error messages for invalid uploads.
 
-## 3.5. Build perceptual hash generation functionality [pending]
+## 3.5. Build perceptual hash generation functionality [deferred]
 ### Dependencies: None
 ### Description: Implement generation of perceptual hashes for uploaded images
 ### Details:

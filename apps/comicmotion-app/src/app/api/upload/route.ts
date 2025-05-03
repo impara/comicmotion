@@ -6,8 +6,8 @@ import { z } from 'zod'; // Import Zod
 
 // Define constants for validation
 const ALLOWED_CONTENT_TYPES = ['image/jpeg', 'image/png'];
-const MAX_FILE_SIZE_MB = 8;
-const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+// const MAX_FILE_SIZE_MB = 8; // Currently unused server-side
+// const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024; // Currently unused server-side, validation is client-side
 
 // Define Zod schema for the request body
 const UploadRequestSchema = z.object({

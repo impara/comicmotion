@@ -15,6 +15,9 @@ const openai = new OpenAI({
   apiKey: openAIApiKey,
 });
 
+// Export the initialized client
+export { openai };
+
 // --- Constants --- //
 // Choose the DALL-E model. DALL-E 3 is generally higher quality.
 const DALL_E_MODEL = "dall-e-3"; // or "dall-e-2"

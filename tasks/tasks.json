@@ -182,7 +182,7 @@
           "id": 3.5,
           "title": "Build perceptual hash generation functionality",
           "description": "Implement generation of perceptual hashes for uploaded images",
-          "status": "pending",
+          "status": "deferred",
           "details": "Research and implement an appropriate perceptual hashing algorithm. Ensure the hash generation is efficient and provides good similarity detection. Create a database schema for storing and querying image hashes."
         },
         {

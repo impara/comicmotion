@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 // import { generateAvatarFromPrompt } from '@/lib/openai';
 import { PrismaClient, Prisma } from 'db'; // Import Prisma namespace for types
-// import { auth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server'; // Re-enable auth
 import { getTemporalClient } from '@/lib/temporalClient'; // Import the Temporal client getter
+import { openai } from '@/lib/openai'; // Import the initialized OpenAI client
 
 // TODO: Import and initialize Temporal Client properly
 // import { Connection, Client } from '@temporalio/client';
@@ -17,24 +18,53 @@ interface GenerateApiResponse {
 }
 
 export async function POST(request: Request): Promise<NextResponse<GenerateApiResponse | { error: string }>> {
-  // TODO: Add proper authentication check
-  // const { userId: clerkId } = auth();
-  // if (!clerkId) {
-  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  // }
-  // TODO: Get internal userId from clerkId, assuming it exists for now
-  const placeholderUserId = "user_placeholder_db_id"; 
-  // const placeholderClerkId = "user_placeholder_clerk_id"; // Removed unused variable
+  // Re-enable auth check and await it
+  const { userId: clerkId } = await auth();
+  if (!clerkId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
+  // TODO: Get internal userId from clerkId - Requires DB lookup or Clerk session token customization
+  // For now, we MUST have a reliable way to link Clerk ID to DB ID. Using clerkId as placeholder DB ID for now.
+  const userId = clerkId; // Using clerkId as placeholder DB ID - CHANGE THIS LATER
+  if (!userId) { // Double check after potential lookup
+      return NextResponse.json({ error: 'User ID not found after authentication.'}, { status: 403 });
+  }
 
   try {
     const body = await request.json();
-    // TODO: The frontend needs to send more info than just the key
-    // e.g., filename, contentType, size, and potentially the S3 URL after upload
     const { imageKey, originalUrl, filename, contentType, size } = body;
 
     if (!imageKey || !originalUrl) {
         return NextResponse.json({ error: 'Missing imageKey or originalUrl' }, { status: 400 });
     }
+
+    // --- NSFW Moderation Check --- 
+    try {
+      console.log(`Checking image moderation for URL: ${originalUrl}`);
+      const moderationResponse = await openai.moderations.create({
+        input: originalUrl, // Use the direct image URL
+      });
+      const result = moderationResponse.results[0];
+
+      if (result.flagged) {
+          const flaggedCategories = Object.entries(result.categories)
+                                        .filter(([, flagged]) => flagged)
+                                        .map(([category]) => category)
+                                        .join(', ');
+          console.warn(`Image flagged for moderation (${flaggedCategories}). URL: ${originalUrl}, UserId: ${userId}`);
+          return NextResponse.json({ error: `Image violates content policy: ${flaggedCategories}` }, { status: 400 });
+      }
+      console.log(`Image passed moderation check. URL: ${originalUrl}`);
+      // TODO: Optionally store moderation scores `result.category_scores` in the Image record later
+
+    } catch (moderationError) {
+        console.error(`OpenAI Moderation API call failed for URL ${originalUrl}:`, moderationError);
+        // Decide if this should block generation or just log the error
+        // For now, let's block it to be safe.
+        return NextResponse.json({ error: 'Failed to check image content policy.' }, { status: 500 });
+    }
+    // --- End Moderation Check --- 
 
     // --- Create Initial DB Records (Image and processing Avatar) ---
     // We need the IDs to return to the client for polling
@@ -45,7 +75,7 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
         const initialRecord = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           const imgRec = await tx.image.create({
             data: {
-                userId: placeholderUserId,
+                userId: userId, // Use actual userId
                 originalUrl: originalUrl,
                 fileName: filename || imageKey.split('/').pop(),
                 fileType: contentType,
@@ -54,7 +84,7 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
           });
           const avatarRec = await tx.avatar.create({
             data: {
-                userId: placeholderUserId,
+                userId: userId, // Use actual userId
                 imageId: imgRec.id,
                 status: 'queued', // Start as queued, generation happens elsewhere
                 // avatarUrl will be updated later by the background job
@@ -90,7 +120,7 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
         args: [{ // Pass necessary arguments to the workflow
             avatarId: avatarRecordId,
             imageId: imageRecordId, // Pass the created imageId
-            userId: placeholderUserId, 
+            userId: userId, // Use actual userId
             originalImageUrl: originalUrl 
         }], 
       });

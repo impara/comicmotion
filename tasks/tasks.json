@@ -28,36 +28,36 @@
           "id": 1.3,
           "title": "Core Dependency Installation",
           "description": "Install and configure all required dependencies",
-          "status": "pending",
+          "status": "completed",
           "details": "Install and set up the following core dependencies:\n- tRPC for type-safe API communication\n- Temporal for workflow management\n- Stripe for payment processing\n- Clerk for authentication\n- Tailwind CSS for styling (already installed during project initialization)\n- React Query for data fetching\n- Zod for schema validation\nEnsure all dependencies are properly configured with their respective initialization code. Dependencies should be installed at the appropriate level in the monorepo structure, either at the root or within specific packages as needed."
         },
         {
           "id": 1.4,
           "title": "Environment Configuration",
           "description": "Set up environment variables and configuration for different environments",
-          "status": "pending",
+          "status": "completed",
           "details": "Create .env files for development, staging, and production environments. Set up a configuration system that loads the appropriate variables based on the current environment. Document all required environment variables in a README file. Implement environment variable validation to ensure all required variables are present. Configure environment handling to work properly within the monorepo structure, ensuring each app and package has access to the variables it needs."
         },
         {
           "id": 1.5,
           "title": "CI/CD Pipeline Setup",
           "description": "Configure continuous integration and deployment workflows",
-          "status": "pending",
+          "status": "completed",
           "details": "Set up GitHub Actions or another CI/CD tool as specified in the TSD. Create workflows for linting, testing, building, and deploying the application. Configure deployment to the appropriate hosting platform. Set up branch protection rules to ensure code quality. Configure the CI/CD pipeline to properly handle the monorepo structure, including caching and selective builds/tests based on changed files."
         },
         {
           "id": 1.6,
           "title": "Database Infrastructure",
           "description": "Set up PostgreSQL database connection and migration system",
-          "status": "pending",
+          "status": "completed",
           "details": "Configure the PostgreSQL connection using Prisma or another ORM as specified in the TSD. Set up the initial database schema and create migration scripts. Implement a seeding system for development data. Configure database pooling and connection management. Position database-related code appropriately within the monorepo structure, potentially as a shared package if needed by multiple apps."
         },
         {
           "id": 1.7,
-          "title": "Storage Infrastructure",
-          "description": "Configure R2 and CDN for asset storage and delivery",
-          "status": "pending",
-          "details": "Set up Cloudflare R2 for object storage. Configure the CDN for asset delivery. Create utility functions for uploading, retrieving, and managing assets. Implement proper authentication for R2 access. Consider creating a shared package within the monorepo for storage-related functionality if it will be used by multiple applications."
+          "title": "Storage Infrastructure (MinIO)",
+          "description": "Configure MinIO object storage and CDN for asset storage and delivery",
+          "status": "in-progress",
+          "details": "Set up connection to the existing MinIO instance (Endpoint: http://192.168.86.214:9000, Bucket: ncat-storage-test). Configure CDN for asset delivery if applicable. Create utility functions for uploading, retrieving, and managing assets using the S3 API (via AWS SDK). Implement proper authentication using environment variables (S3_ACCESS_KEY, S3_SECRET_KEY). Create a shared package within the monorepo (e.g., packages/storage) for storage-related functionality."
         },
         {
           "id": 1.8,
@@ -168,14 +168,14 @@
           "id": 3.1,
           "title": "Implement drag-and-drop file upload UI",
           "description": "Create a user-friendly drag-and-drop interface with image preview functionality",
-          "status": "pending",
+          "status": "in-progress",
           "details": "Develop a responsive UI component that allows users to drag and drop image files or select them via file browser. Show a preview of the selected image before upload. Include visual feedback during the upload process."
         },
         {
           "id": 3.2,
           "title": "Create backend API endpoint for image uploads",
           "description": "Implement the server-side API endpoint that will receive and process image uploads",
-          "status": "pending",
+          "status": "in-progress",
           "details": "Create a RESTful API endpoint that accepts multipart/form-data uploads. Handle authentication and authorization for the upload process. Implement proper request validation and error handling."
         },
         {

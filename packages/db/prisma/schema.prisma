@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String        @id @default(cuid()) // Internal DB ID
+  clerkId         String        @unique // Clerk User ID
+  email           String        @unique
+  credits         Int           @default(5)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  subscription    Subscription? // Relation to Subscription
+  images          Image[]       // Relation to uploaded Images
+  avatars         Avatar[]      // Relation to generated Avatars
+  scenes          Scene[]       // Relation to generated Scenes
+  animations      Animation[]   // Relation to generated Animations
+  renderHistories RenderHistory[] // Relation to Render History
+}
+
+model Subscription {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  user               User      @relation(fields: [userId], references: [id])
+  stripeCustomerId   String?   @unique
+  stripeSubscriptionId String?   @unique
+  stripePriceId      String?
+  stripeCurrentPeriodEnd DateTime?
+  status             String?   // e.g., active, canceled, past_due
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Image {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  originalUrl    String    // URL in R2 storage
+  perceptualHash String?   // For nudity detection/comparison
+  nsfwScore      Float?    // Score from OpenAI moderation
+  fileName       String?
+  fileType       String?   // e.g., image/jpeg
+  fileSize       Int?      // Size in bytes
+  width          Int?
+  height         Int?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  avatar         Avatar?   // Relation to the generated Avatar
+}
+
+model Avatar {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  imageId     String    @unique // Link back to the original selfie image
+  image       Image     @relation(fields: [imageId], references: [id])
+  replicateId String?   // ID from Replicate job
+  avatarUrl   String?   // URL of the generated avatar image
+  status      String    // e.g., pending, processing, completed, failed
+  error       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  scenes      Scene[]   // Relation to scenes using this avatar
+}
+
+model Scene {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  avatarId    String
+  avatar      Avatar    @relation(fields: [avatarId], references: [id])
+  theme       String    // e.g., city, fantasy, neon
+  replicateId String?
+  sceneUrl    String?   // URL of the generated scene image (1920x1080)
+  status      String    // e.g., pending, processing, completed, failed
+  error       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  animations  Animation[] // Relation to animations using this scene
+}
+
+model Animation {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  sceneId     String
+  scene       Scene     @relation(fields: [sceneId], references: [id])
+  replicateId String?
+  videoUrl    String?   // URL of the generated video (MP4)
+  duration    Int       // Duration in seconds (e.g., 6 or 10)
+  status      String    // e.g., pending, processing, completed, failed
+  error       String?
+  watermarked Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  renderHistory RenderHistory? // Link to the final render history entry
+}
+
+model RenderHistory {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  imageId       String?
+  avatarId      String?
+  sceneId       String?
+  animationId   String?   @unique // Link to the final animation if successful
+  animation     Animation? @relation(fields: [animationId], references: [id])
+  status        String    // e.g., started, avatar_complete, scene_complete, failed, completed
+  step          String?   // Last successful step
+  creditsConsumed Int       @default(1)
+  error         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}

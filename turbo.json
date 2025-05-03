@@ -8,7 +8,11 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": [".next/**", "dist/**"],
-      "passThroughEnv": ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"]
+      "passThroughEnv": [
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+        "CLERK_SECRET_KEY"
+      ]
     },
     "lint": {},
     "test": {}

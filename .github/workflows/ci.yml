@@ -51,12 +51,22 @@ jobs:
         env:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL: ${{ secrets.NEXT_PUBLIC_CLERK_SIGN_IN_URL }}
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL: ${{ secrets.NEXT_PUBLIC_CLERK_SIGN_UP_URL }}
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: ${{ secrets.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL }}
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: ${{ secrets.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL }}
         run: |
           echo "Attempting to print relevant env vars:"
           echo "STRIPE_SECRET_KEY exists: $( [[ -z "${STRIPE_SECRET_KEY}" ]] && echo "No" || echo "Yes (masked)" )"
           echo "STRIPE_WEBHOOK_SECRET exists: $( [[ -z "${STRIPE_WEBHOOK_SECRET}" ]] && echo "No" || echo "Yes (masked)" )"
+          echo "CLERK_SECRET_KEY exists: $( [[ -z "${CLERK_SECRET_KEY}" ]] && echo "No" || echo "Yes (masked)" )"
+          echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY exists: $( [[ -z "${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}" ]] && echo "No" || echo "Yes" )"
           echo "Listing all env vars containing STRIPE:"
           printenv | grep STRIPE || echo "No STRIPE vars found"
+          echo "Listing all env vars containing CLERK:"
+          printenv | grep CLERK || echo "No CLERK vars found"
           echo "Listing all env vars containing NEXT:"
           printenv | grep NEXT || echo "No NEXT vars found"
         working-directory: . # Run this at the root where turbo runs
@@ -65,14 +75,12 @@ jobs:
         env:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          # You might need other env vars here depending on your app
-          # For Clerk, if not using NEXT_PUBLIC_ prefix and needing them server-side during build:
-          # CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          # NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          # NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
-          # NEXT_PUBLIC_CLERK_SIGN_UP_URL: /sign-up
-          # NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /dashboard
-          # NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /dashboard
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL: ${{ secrets.NEXT_PUBLIC_CLERK_SIGN_IN_URL }}
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL: ${{ secrets.NEXT_PUBLIC_CLERK_SIGN_UP_URL }}
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: ${{ secrets.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL }}
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: ${{ secrets.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL }}
         run: npm run build
         working-directory: .
 

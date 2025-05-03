@@ -6,7 +6,7 @@ node_modules/
 dist/
 
 # Prisma Client
-/packages/generated/
+packages/*/generated/
 
 # Logs
 npm-debug.log*
@@ -40,6 +40,9 @@ coverage/
 # Ignore lockfiles at root if using workspaces
 /package-lock.json
 yarn.lock
-pnpm-lock.yaml 
-/tasks/
+pnpm-lock.yaml
+
+# .cursor-rules.yaml is used by cursor to configure the AI code assistant
+# Check it into source control to share your project settings with team members
+# /tasks/
 .cursor-rules.yaml

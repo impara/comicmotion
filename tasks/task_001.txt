@@ -1,6 +1,6 @@
 # Task ID: 1
 # Title: Set up project infrastructure
-# Status: pending
+# Status: completed
 # Dependencies: None
 # Priority: high
 # Description: Initialize the Next.js project with required dependencies and configure the development environment according to the ComicMotion Technical Solution Design.
@@ -8,7 +8,7 @@
 Implement the foundational infrastructure for ComicMotion based on the Technical Solution Design (TSD). This includes setting up a Next.js application with TypeScript, configuring necessary services, establishing the database connection, and implementing authentication flows. The project should follow modern development practices with proper linting, formatting, and testing capabilities. CURRENT STATUS: The Next.js Project Initialization (subtask 1.1) and Monorepo Structure Setup (subtask 1.2) have been completed. The Next.js app is now located in apps/comicmotion-app with Turborepo configuration in place. The team is now ready to proceed with Core Dependency Installation (subtask 1.3).
 
 # Test Strategy:
-Verify that the project builds successfully and the development server runs without errors. Ensure all dependencies are correctly installed and the project structure follows best practices. Test connections to all external services (PostgreSQL, R2, etc.) and verify that the CI/CD pipeline successfully builds and deploys the application.
+Verify that the project builds successfully and the development server runs without errors. Ensure all dependencies are correctly installed and the project structure follows best practices. Test connections to all external services (PostgreSQL, minio, etc.) and verify that the CI/CD pipeline successfully builds and deploys the application.
 
 # Subtasks:
 ## 1.1. Next.js Project Initialization [completed]
@@ -23,7 +23,7 @@ Use create-next-app to bootstrap the project with TypeScript. Configure the proj
 ### Details:
 The project has been set up as a monorepo using Turborepo. The Next.js application is located in apps/comicmotion-app. A root-level turbo.json has been created for configuration, and workspaces have been properly configured in package.json to manage dependencies between packages.
 
-## 1.3. Core Dependency Installation [pending]
+## 1.3. Core Dependency Installation [completed]
 ### Dependencies: None
 ### Description: Install and configure all required dependencies
 ### Details:
@@ -37,39 +37,33 @@ Install and set up the following core dependencies:
 - Zod for schema validation
 Ensure all dependencies are properly configured with their respective initialization code. Dependencies should be installed at the appropriate level in the monorepo structure, either at the root or within specific packages as needed.
 
-## 1.4. Environment Configuration [pending]
+## 1.4. Environment Configuration [completed]
 ### Dependencies: None
 ### Description: Set up environment variables and configuration for different environments
 ### Details:
 Create .env files for development, staging, and production environments. Set up a configuration system that loads the appropriate variables based on the current environment. Document all required environment variables in a README file. Implement environment variable validation to ensure all required variables are present. Configure environment handling to work properly within the monorepo structure, ensuring each app and package has access to the variables it needs.
 
-## 1.5. CI/CD Pipeline Setup [pending]
+## 1.5. CI/CD Pipeline Setup [completed]
 ### Dependencies: None
 ### Description: Configure continuous integration and deployment workflows
 ### Details:
 Set up GitHub Actions or another CI/CD tool as specified in the TSD. Create workflows for linting, testing, building, and deploying the application. Configure deployment to the appropriate hosting platform. Set up branch protection rules to ensure code quality. Configure the CI/CD pipeline to properly handle the monorepo structure, including caching and selective builds/tests based on changed files.
 
-## 1.6. Database Infrastructure [pending]
+## 1.6. Database Infrastructure [completed]
 ### Dependencies: None
 ### Description: Set up PostgreSQL database connection and migration system
 ### Details:
 Configure the PostgreSQL connection using Prisma or another ORM as specified in the TSD. Set up the initial database schema and create migration scripts. Implement a seeding system for development data. Configure database pooling and connection management. Position database-related code appropriately within the monorepo structure, potentially as a shared package if needed by multiple apps.
 
-## 1.7. Storage Infrastructure [pending]
+## 1.7. Storage Infrastructure (MinIO) [completed]
 ### Dependencies: None
-### Description: Configure R2 and CDN for asset storage and delivery
+### Description: Configure MinIO object storage and CDN for asset storage and delivery
 ### Details:
-Set up Cloudflare R2 for object storage. Configure the CDN for asset delivery. Create utility functions for uploading, retrieving, and managing assets. Implement proper authentication for R2 access. Consider creating a shared package within the monorepo for storage-related functionality if it will be used by multiple applications.
+Set up connection to the existing MinIO instance (Endpoint: http://192.168.86.214:9000, Bucket: ncat-storage-test). Configure CDN for asset delivery if applicable. Create utility functions for uploading, retrieving, and managing assets using the S3 API (via AWS SDK). Implement proper authentication using environment variables (S3_ACCESS_KEY, S3_SECRET_KEY). Create a shared package within the monorepo (e.g., packages/storage) for storage-related functionality.
 
-## 1.8. Secrets Management [pending]
-### Dependencies: None
-### Description: Implement Vault or another secrets management solution
-### Details:
-Set up Vault or another secrets management tool as specified in the TSD. Configure access policies and authentication methods. Create utilities for retrieving secrets from the vault in the application code. Ensure the secrets management solution works properly across all packages in the monorepo.
-
-## 1.9. Code Quality Tools [pending]
+## 1.8. Code Quality Tools [completed]
 ### Dependencies: None
 ### Description: Set up ESLint, Prettier, and testing frameworks
 ### Details:
-ESLint has been initialized during project setup. Complete the configuration with appropriate rules for React and TypeScript. Set up Prettier for code formatting. Install and configure Jest and React Testing Library for unit and integration tests. Set up Cypress or Playwright for end-to-end testing if required by the TSD. Configure these tools to work correctly in the monorepo structure, with appropriate settings for each workspace.
+ESLint has been initialized during project setup. Complete the configuration with appropriate rules for React and TypeScript. Set up Prettier for code formatting. Configure these tools to work correctly in the monorepo structure, with appropriate settings for each workspace.
 

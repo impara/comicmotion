@@ -2,18 +2,29 @@
 
 import React from 'react';
 import { ImageUploader } from '@/components/ImageUploader'; // Assuming @ maps to src/
-import { useRouter } from 'next/navigation'; // For redirecting after upload
+// import { useRouter } from 'next/navigation'; // Removed unused import
+
+// Define the expected type for the upload info object
+type UploadInfo = {
+  key: string;
+  previewUrl: string;
+  filename: string;
+  contentType: string;
+  size: number;
+  originalUrl: string;
+}
 
 export default function UploadPage() {
-  const router = useRouter();
+  // const router = useRouter(); // Removed unused variable
 
-  const handleUploadSuccess = (key: string, previewUrl: string) => {
-    console.log('Upload Success!', { key, previewUrl });
+  // Updated function signature to match onUploadComplete prop
+  const handleUploadSuccess = (uploadInfo: UploadInfo) => {
+    console.log('Upload Success!', uploadInfo);
     // Store the key/URL somewhere (e.g., state management, local storage)
     // Redirect to the next step (e.g., theme selection)
     // For now, just log and maybe navigate
-    // router.push('/themes?imageKey=' + encodeURIComponent(key));
-    alert(`Upload successful! Key: ${key}`); // Placeholder feedback
+    // router.push('/themes?imageKey=' + encodeURIComponent(uploadInfo.key));
+    alert(`Upload successful! Key: ${uploadInfo.key}`); // Placeholder feedback
   };
 
   const handleUploadError = (error: string) => {
@@ -27,7 +38,7 @@ export default function UploadPage() {
       <h1 className="text-3xl font-bold text-center mb-8">Step 1: Upload Your Selfie</h1>
       <div className="max-w-lg mx-auto">
         <ImageUploader 
-          onUploadSuccess={handleUploadSuccess}
+          onUploadComplete={handleUploadSuccess} // Correct prop name and function signature
           onUploadError={handleUploadError}
         />
       </div>

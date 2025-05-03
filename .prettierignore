@@ -1,0 +1,13 @@
+# Ignore artifacts:
+node_modules
+.turbo
+dist
+build
+coverage
+
+# Ignore specific config files if needed:
+# package-lock.json
+# pnpm-lock.yaml
+
+# Ignore generated files:
+packages/db/generated 

@@ -11,13 +11,13 @@ Implement authentication using Clerk with Google OAuth provider. Create sign-up 
 Test user registration, login, and logout flows. Verify session persistence and protected route access. Test with both valid and invalid credentials. Ensure Google OAuth integration works correctly. Validate security measures against OWASP top 10 vulnerabilities.
 
 # Subtasks:
-## 2.1. Integrate Clerk Authentication [pending]
+## 2.1. Integrate Clerk Authentication [completed]
 ### Dependencies: None
 ### Description: Set up Clerk SDK and configure project settings
 ### Details:
 Register ComicMotion application with Clerk, install SDK, configure environment variables, and implement basic authentication components.
 
-## 2.2. Configure Google OAuth Provider [pending]
+## 2.2. Configure Google OAuth Provider [completed]
 ### Dependencies: None
 ### Description: Set up Google OAuth flow through Clerk
 ### Details:
@@ -29,25 +29,25 @@ Register application with Google Cloud Platform, obtain OAuth credentials, confi
 ### Details:
 Set up secure JWT configuration with appropriate expiration times, implement refresh token logic, and ensure sessions are properly maintained across the application.
 
-## 2.4. Create Authentication UI Components [pending]
+## 2.4. Create Authentication UI Components [deferred]
 ### Dependencies: None
 ### Description: Build sign-up, sign-in, and account management UI
 ### Details:
 Develop responsive UI components for user registration, login, password reset, and account management screens that integrate with Clerk's authentication flow.
 
-## 2.5. Implement Role-Based Access Control [pending]
+## 2.5. Implement Role-Based Access Control [deferred]
 ### Dependencies: None
 ### Description: Set up user roles and claims for authorization
 ### Details:
 Define user roles (e.g., free user, premium user, admin), implement claims-based authorization, and configure permission checks throughout the application.
 
-## 2.6. Design User Database Schema [pending]
+## 2.6. Design User Database Schema [deferred]
 ### Dependencies: None
 ### Description: Create database schema for user account information
 ### Details:
 Design and implement database tables/collections for storing user-specific data including credits, subscription status, and render history, ensuring proper relations with Clerk's user identifiers.
 
-## 2.7. Implement Protected Routes [pending]
+## 2.7. Implement Protected Routes [completed]
 ### Dependencies: None
 ### Description: Create middleware for route protection based on authentication status
 ### Details:
@@ -58,10 +58,4 @@ Set up Next.js middleware to protect routes based on authentication status and u
 ### Description: Implement security measures according to OWASP and SOC2 standards
 ### Details:
 Apply security headers, CSRF protection, rate limiting, and other security measures to protect against common vulnerabilities. Document security implementations for SOC2 compliance.
-
-## 2.9. Comprehensive Testing [pending]
-### Dependencies: None
-### Description: Create test suite for authentication flows
-### Details:
-Develop unit and integration tests for all authentication flows, including happy paths and edge cases. Test security measures against OWASP top 10 vulnerabilities.
 

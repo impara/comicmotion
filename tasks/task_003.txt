@@ -5,29 +5,29 @@
 # Priority: high
 # Description: Create a service to handle selfie uploads with validation and storage
 # Details:
-Implement an upload service that accepts JPG/PNG images up to 8MB. Create a drag-and-drop interface with preview functionality. Validate file format, size, and dimensions. Generate a perceptual hash of uploaded images and implement NSFW detection using OpenAI moderation API. Store approved images in Cloudflare R2 storage and return secure URLs. Implement error handling for failed uploads.
+Implement an upload service that accepts JPG/PNG images up to 8MB. Create a drag-and-drop interface with preview functionality. Validate file format, size, and dimensions. Generate a perceptual hash of uploaded images and implement NSFW detection using OpenAI moderation API. Store approved images in MinIO storage (Endpoint: http://192.168.86.214:9000, Bucket: ncat-storage-test) and return secure URLs. Implement error handling for failed uploads.
 
 # Test Strategy:
-Test with various image formats, sizes, and content. Verify NSFW detection blocks inappropriate content (score > 0.8). Confirm successful storage in R2 and proper URL generation. Test error cases including oversized files and invalid formats.
+Test with various image formats, sizes, and content. Verify NSFW detection blocks inappropriate content (score > 0.8). Confirm successful storage in MinIO and proper URL generation. Test error cases including oversized files and invalid formats.
 
 # Subtasks:
-## 3.1. Implement drag-and-drop file upload UI [pending]
+## 3.1. Implement drag-and-drop file upload UI [completed]
 ### Dependencies: None
 ### Description: Create a user-friendly drag-and-drop interface with image preview functionality
 ### Details:
 Develop a responsive UI component that allows users to drag and drop image files or select them via file browser. Show a preview of the selected image before upload. Include visual feedback during the upload process.
 
-## 3.2. Create backend API endpoint for image uploads [pending]
+## 3.2. Create backend API endpoint for image uploads [completed]
 ### Dependencies: None
 ### Description: Implement the server-side API endpoint that will receive and process image uploads
 ### Details:
 Create a RESTful API endpoint that accepts multipart/form-data uploads. Handle authentication and authorization for the upload process. Implement proper request validation and error handling.
 
-## 3.3. Integrate with Cloudflare R2 storage [pending]
+## 3.3. Integrate with MinIO storage [completed]
 ### Dependencies: None
-### Description: Set up and configure Cloudflare R2 storage integration for the upload service
+### Description: Utilize the existing MinIO setup for the upload service
 ### Details:
-Configure R2 bucket and access credentials. Implement helper functions for uploading files to R2, generating pre-signed URLs, and managing file metadata. Test the connection and file operations.
+Use the existing MinIO configuration (Endpoint: http://192.168.86.214:9000, Bucket: ncat-storage-test) as set up in Task 1.7. Implement helper functions for uploading files to MinIO, generating pre-signed URLs, and managing file metadata. Test the connection and file operations.
 
 ## 3.4. Implement file validation logic [pending]
 ### Dependencies: None
@@ -47,9 +47,9 @@ Research and implement an appropriate perceptual hashing algorithm. Ensure the h
 ### Details:
 Set up OpenAI API integration. Implement logic to send images for moderation and process the response. Define threshold (score > 0.8) for rejecting inappropriate content. Create appropriate user feedback for rejected images.
 
-## 3.7. Design and implement storage key structure [pending]
+## 3.7. Design and implement storage key structure [completed]
 ### Dependencies: None
-### Description: Create a logical structure for organizing uploaded files in R2 storage
+### Description: Create a logical structure for organizing uploaded files in MinIO storage
 ### Details:
 Design a file naming and path structure that supports efficient retrieval and organization. Consider user ID, upload date, and file type in the structure. Document the key structure for future reference.
 

@@ -1,25 +1,96 @@
 'use client'; // Required for hooks like useState, useEffect
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone, FileRejection } from 'react-dropzone';
+import { useQuery } from '@tanstack/react-query'; // Import useQuery
+
+// Interface for the job status API response
+interface JobStatus {
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  avatarUrl?: string | null;
+  error?: string | null;
+}
 
 interface ImageUploaderProps {
-  onUploadSuccess: (key: string, previewUrl: string) => void;
+  onUploadComplete: (uploadInfo: { key: string; previewUrl: string; filename: string; contentType: string; size: number; originalUrl: string }) => void;
   onUploadError: (error: string) => void;
+  // Callback when avatar generation *starts* successfully (job ID received)
+  onAvatarGenerationStart?: (avatarJobId: string) => void;
+  // Callback when avatar generation *finishes* (completed or failed)
+  onAvatarGenerationComplete?: (result: { success: boolean; avatarId: string; avatarUrl?: string | null; error?: string | null }) => void;
 }
 
 const MAX_SIZE = 8 * 1024 * 1024; // 8MB from PRD
+const MINIO_ENDPOINT = process.env.NEXT_PUBLIC_S3_ENDPOINT_URL;
+const BUCKET_NAME = process.env.NEXT_PUBLIC_S3_BUCKET_NAME;
 
-export function ImageUploader({ onUploadSuccess, onUploadError }: ImageUploaderProps) {
+export function ImageUploader({ 
+    onUploadComplete, 
+    onUploadError, 
+    onAvatarGenerationStart, // Added prop
+    onAvatarGenerationComplete // Added prop
+}: ImageUploaderProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  // const [isGenerating, setIsGenerating] = useState(false); // Remove this, use polling status
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [avatarJobId, setAvatarJobId] = useState<string | null>(null); // Store the Job ID
+
+  // --- Polling Logic using React Query ---
+  const { data: jobStatus, isLoading: isPolling } = useQuery<JobStatus, Error>({
+    queryKey: ['avatarStatus', avatarJobId], // Query key includes the job ID
+    queryFn: async () => {
+      if (!avatarJobId) throw new Error('No job ID to poll');
+      const response = await fetch(`/api/job/${avatarJobId}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch job status');
+      }
+      return response.json();
+    },
+    enabled: !!avatarJobId, // Only run the query if avatarJobId is set
+    refetchInterval: (query) => {
+      // Stop polling if the job is completed or failed
+      const status = query.state.data?.status;
+      return status === 'completed' || status === 'failed' ? false : 2000; // Poll every 2 seconds
+    },
+    refetchIntervalInBackground: false,
+    retry: (failureCount, error) => {
+        // Don't retry endlessly on certain errors, e.g., 404 Not Found
+        if (error.message.includes('Job not found') || failureCount > 5) {
+            return false;
+        }
+        return true; // Retry on other errors
+    },
+    gcTime: 1000 * 60 * 5, // Keep data for 5 mins after inactive
+  });
+
+  // --- Effect to handle polling completion --- 
+  useEffect(() => {
+    if (jobStatus?.status === 'completed' || jobStatus?.status === 'failed') {
+      if (avatarJobId) { // Ensure we have the job ID
+         onAvatarGenerationComplete?.({
+           success: jobStatus.status === 'completed',
+           avatarId: avatarJobId,
+           avatarUrl: jobStatus.avatarUrl,
+           error: jobStatus.error
+         });
+      }
+      setAvatarJobId(null); // Stop polling by clearing the job ID
+    }
+    // Handle polling errors displayed to user
+    if (jobStatus?.error && jobStatus?.status === 'failed') {
+        setErrorMessage(`Generation failed: ${jobStatus.error}`);
+    }
+  }, [jobStatus, avatarJobId, onAvatarGenerationComplete]);
+
 
   const onDrop = useCallback((acceptedFiles: File[], fileRejections: FileRejection[]) => {
     setErrorMessage(null); // Clear previous errors
     setSelectedFile(null);
     setPreview(null);
+    setAvatarJobId(null); // Reset job ID on new file selection
 
     if (fileRejections.length > 0) {
       const firstRejection = fileRejections[0];
@@ -57,18 +128,21 @@ export function ImageUploader({ onUploadSuccess, onUploadError }: ImageUploaderP
     multiple: false,
   };
 
-  // Pass options directly, destructure later if needed or access via dropzone
   const dropzone = useDropzone(dropzoneOptions);
   const { getRootProps, getInputProps, isDragActive } = dropzone;
 
-  const handleUpload = async () => {
-    if (!selectedFile) return;
+  const handleUploadAndGenerate = async () => {
+    if (!selectedFile || !preview) return;
 
     setIsUploading(true);
+    // setIsGenerating(false); // Removed
+    setAvatarJobId(null); // Reset job ID
     setErrorMessage(null);
 
+    let uploadKey = '';
+
     try {
-      // 1. Get pre-signed URL from our backend
+      console.log('Requesting pre-signed URL...');
       const presignResponse = await fetch('/api/upload', {
         method: 'POST',
         headers: {
@@ -86,8 +160,10 @@ export function ImageUploader({ onUploadSuccess, onUploadError }: ImageUploaderP
       }
 
       const { uploadUrl, key } = await presignResponse.json();
+      uploadKey = key;
+      console.log('Got pre-signed URL and key:', key);
 
-      // 2. Upload the file directly to MinIO using the pre-signed URL
+      console.log('Uploading file to MinIO...');
       const uploadResponse = await fetch(uploadUrl, {
         method: 'PUT',
         body: selectedFile,
@@ -97,38 +173,86 @@ export function ImageUploader({ onUploadSuccess, onUploadError }: ImageUploaderP
       });
 
       if (!uploadResponse.ok) {
-        // Attempt to read error from MinIO/S3 if possible, otherwise generic
         let errorMsg = 'Failed to upload file.';
         try {
           const errorXml = await uploadResponse.text();
-          // Basic XML parsing attempt (might need a library for robust parsing)
           const match = errorXml.match(/<Message>(.*?)<\/Message>/);
           if (match && match[1]) {
             errorMsg = `Upload failed: ${match[1]}`;
           }
-        } catch (xmlParseError) { // Catch XML parsing error specifically
+        } catch (xmlParseError) { 
           console.warn("Could not parse S3 error XML", xmlParseError);
         }
         throw new Error(errorMsg);
       }
+      console.log('File uploaded successfully!');
+      setIsUploading(false);
 
-      // Success!
-      if (preview) {
-        onUploadSuccess(key, preview);
+      if (!MINIO_ENDPOINT || !BUCKET_NAME) {
+        console.warn("MinIO endpoint/bucket env vars not set, cannot construct original URL");
+        throw new Error("MinIO configuration missing in environment.");
+      }
+      const originalUrl = `${MINIO_ENDPOINT}/${BUCKET_NAME}/${uploadKey}`;
+
+      // Notify parent that upload is complete (BEFORE starting generation)
+      onUploadComplete({ 
+          key: uploadKey, 
+          previewUrl: preview, 
+          filename: selectedFile.name, 
+          contentType: selectedFile.type, 
+          size: selectedFile.size,
+          originalUrl: originalUrl
+      });
+
+      console.log('Triggering avatar generation...');
+      // setIsGenerating(true); // Removed
+      const generateResponse = await fetch('/api/avatar/generate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            imageKey: uploadKey,
+            originalUrl: originalUrl,
+            filename: selectedFile.name,
+            contentType: selectedFile.type,
+            size: selectedFile.size,
+        }),
+      });
+
+      if (!generateResponse.ok) {
+        const errorData = await generateResponse.json();
+        throw new Error(errorData.error || 'Failed to start avatar generation');
       }
 
-    } catch (error: unknown) { // Catch as unknown, then check type
-      let message = 'An unexpected error occurred during upload.';
+      // Start polling by setting the job ID
+      const { avatarId } = await generateResponse.json();
+      console.log('Avatar generation job started, polling ID:', avatarId);
+      setAvatarJobId(avatarId);
+      onAvatarGenerationStart?.(avatarId); // Notify parent generation started
+
+    } catch (error: unknown) {
+      let message = 'An unexpected error occurred.';
       if (error instanceof Error) {
         message = error.message;
       }
-      console.error("Upload error:", error);
+      console.error("Operation error:", error);
       setErrorMessage(message);
       onUploadError(message);
-    } finally {
+      // Ensure we stop any potential residual states
       setIsUploading(false);
+      setAvatarJobId(null); // Ensure polling stops if initiation failed
     }
+    // Don't set isUploading false here, let the polling status dictate UI state
   };
+
+  // Determine button state and text based on polling status
+  const isGenerating = !!avatarJobId && (jobStatus?.status === 'queued' || jobStatus?.status === 'processing' || isPolling);
+  let buttonText = 'Upload & Generate';
+  if (isUploading) buttonText = 'Uploading...';
+  else if (isGenerating) buttonText = `Generating Avatar (${jobStatus?.status || 'starting'})...`;
+  else if (jobStatus?.status === 'completed') buttonText = 'Generation Complete!';
+  else if (jobStatus?.status === 'failed') buttonText = 'Generation Failed';
 
   return (
     <div className="flex flex-col items-center space-y-4 p-4 border border-dashed border-gray-400 rounded-lg">
@@ -144,6 +268,11 @@ export function ImageUploader({ onUploadSuccess, onUploadError }: ImageUploaderP
         )}
       </div>
 
+      {/* Display detailed status during generation if needed */}
+      {isGenerating && jobStatus?.status && (
+          <p className="text-blue-500 text-sm">Status: {jobStatus.status}</p>
+      )}
+
       {errorMessage && (
         <p className="text-red-500 text-sm">{errorMessage}</p>
       )}
@@ -157,11 +286,11 @@ export function ImageUploader({ onUploadSuccess, onUploadError }: ImageUploaderP
 
       {selectedFile && (
         <button
-          onClick={handleUpload}
-          disabled={isUploading}
+          onClick={handleUploadAndGenerate}
+          disabled={isUploading || isGenerating}
           className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
         >
-          {isUploading ? 'Uploading...' : 'Upload Selfie'}
+          {buttonText}
         </button>
       )}
     </div>

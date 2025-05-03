@@ -43,6 +43,11 @@ jobs:
         run: npm run lint
         working-directory: apps/comicmotion-app
 
+      # Add Prettier check step
+      - name: Check Formatting
+        run: npm run format -- --check
+        working-directory: .
+
       - name: Test
         run: npm run test
         working-directory: .

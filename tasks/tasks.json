@@ -4,11 +4,11 @@
       "id": 1,
       "title": "Set up project infrastructure",
       "description": "Initialize the Next.js project with required dependencies and configure the development environment according to the ComicMotion Technical Solution Design.",
-      "status": "pending",
+      "status": "completed",
       "dependencies": [],
       "priority": "high",
       "details": "Implement the foundational infrastructure for ComicMotion based on the Technical Solution Design (TSD). This includes setting up a Next.js application with TypeScript, configuring necessary services, establishing the database connection, and implementing authentication flows. The project should follow modern development practices with proper linting, formatting, and testing capabilities. CURRENT STATUS: The Next.js Project Initialization (subtask 1.1) and Monorepo Structure Setup (subtask 1.2) have been completed. The Next.js app is now located in apps/comicmotion-app with Turborepo configuration in place. The team is now ready to proceed with Core Dependency Installation (subtask 1.3).",
-      "testStrategy": "Verify that the project builds successfully and the development server runs without errors. Ensure all dependencies are correctly installed and the project structure follows best practices. Test connections to all external services (PostgreSQL, R2, etc.) and verify that the CI/CD pipeline successfully builds and deploys the application.",
+      "testStrategy": "Verify that the project builds successfully and the development server runs without errors. Ensure all dependencies are correctly installed and the project structure follows best practices. Test connections to all external services (PostgreSQL, minio, etc.) and verify that the CI/CD pipeline successfully builds and deploys the application.",
       "subtasks": [
         {
           "id": 1.1,
@@ -56,22 +56,15 @@
           "id": 1.7,
           "title": "Storage Infrastructure (MinIO)",
           "description": "Configure MinIO object storage and CDN for asset storage and delivery",
-          "status": "in-progress",
+          "status": "completed",
           "details": "Set up connection to the existing MinIO instance (Endpoint: http://192.168.86.214:9000, Bucket: ncat-storage-test). Configure CDN for asset delivery if applicable. Create utility functions for uploading, retrieving, and managing assets using the S3 API (via AWS SDK). Implement proper authentication using environment variables (S3_ACCESS_KEY, S3_SECRET_KEY). Create a shared package within the monorepo (e.g., packages/storage) for storage-related functionality."
         },
         {
           "id": 1.8,
-          "title": "Secrets Management",
-          "description": "Implement Vault or another secrets management solution",
-          "status": "pending",
-          "details": "Set up Vault or another secrets management tool as specified in the TSD. Configure access policies and authentication methods. Create utilities for retrieving secrets from the vault in the application code. Ensure the secrets management solution works properly across all packages in the monorepo."
-        },
-        {
-          "id": 1.9,
           "title": "Code Quality Tools",
           "description": "Set up ESLint, Prettier, and testing frameworks",
-          "status": "pending",
-          "details": "ESLint has been initialized during project setup. Complete the configuration with appropriate rules for React and TypeScript. Set up Prettier for code formatting. Install and configure Jest and React Testing Library for unit and integration tests. Set up Cypress or Playwright for end-to-end testing if required by the TSD. Configure these tools to work correctly in the monorepo structure, with appropriate settings for each workspace."
+          "status": "completed",
+          "details": "ESLint has been initialized during project setup. Complete the configuration with appropriate rules for React and TypeScript. Set up Prettier for code formatting. Configure these tools to work correctly in the monorepo structure, with appropriate settings for each workspace."
         }
       ]
     },
@@ -91,14 +84,14 @@
           "id": 2.1,
           "title": "Integrate Clerk Authentication",
           "description": "Set up Clerk SDK and configure project settings",
-          "status": "pending",
+          "status": "completed",
           "details": "Register ComicMotion application with Clerk, install SDK, configure environment variables, and implement basic authentication components."
         },
         {
           "id": 2.2,
           "title": "Configure Google OAuth Provider",
           "description": "Set up Google OAuth flow through Clerk",
-          "status": "pending",
+          "status": "completed",
           "details": "Register application with Google Cloud Platform, obtain OAuth credentials, configure Clerk to use Google as a social sign-in provider, and test the authentication flow."
         },
         {
@@ -112,28 +105,28 @@
           "id": 2.4,
           "title": "Create Authentication UI Components",
           "description": "Build sign-up, sign-in, and account management UI",
-          "status": "pending",
+          "status": "deferred",
           "details": "Develop responsive UI components for user registration, login, password reset, and account management screens that integrate with Clerk's authentication flow."
         },
         {
           "id": 2.5,
           "title": "Implement Role-Based Access Control",
           "description": "Set up user roles and claims for authorization",
-          "status": "pending",
+          "status": "deferred",
           "details": "Define user roles (e.g., free user, premium user, admin), implement claims-based authorization, and configure permission checks throughout the application."
         },
         {
           "id": 2.6,
           "title": "Design User Database Schema",
           "description": "Create database schema for user account information",
-          "status": "pending",
+          "status": "deferred",
           "details": "Design and implement database tables/collections for storing user-specific data including credits, subscription status, and render history, ensuring proper relations with Clerk's user identifiers."
         },
         {
           "id": 2.7,
           "title": "Implement Protected Routes",
           "description": "Create middleware for route protection based on authentication status",
-          "status": "pending",
+          "status": "completed",
           "details": "Set up Next.js middleware to protect routes based on authentication status and user roles, redirecting unauthorized access attempts appropriately."
         },
         {
@@ -142,13 +135,6 @@
           "description": "Implement security measures according to OWASP and SOC2 standards",
           "status": "pending",
           "details": "Apply security headers, CSRF protection, rate limiting, and other security measures to protect against common vulnerabilities. Document security implementations for SOC2 compliance."
-        },
-        {
-          "id": 2.9,
-          "title": "Comprehensive Testing",
-          "description": "Create test suite for authentication flows",
-          "status": "pending",
-          "details": "Develop unit and integration tests for all authentication flows, including happy paths and edge cases. Test security measures against OWASP top 10 vulnerabilities."
         }
       ]
     },
@@ -161,29 +147,29 @@
         1
       ],
       "priority": "high",
-      "details": "Implement an upload service that accepts JPG/PNG images up to 8MB. Create a drag-and-drop interface with preview functionality. Validate file format, size, and dimensions. Generate a perceptual hash of uploaded images and implement NSFW detection using OpenAI moderation API. Store approved images in Cloudflare R2 storage and return secure URLs. Implement error handling for failed uploads.",
-      "testStrategy": "Test with various image formats, sizes, and content. Verify NSFW detection blocks inappropriate content (score > 0.8). Confirm successful storage in R2 and proper URL generation. Test error cases including oversized files and invalid formats.",
+      "details": "Implement an upload service that accepts JPG/PNG images up to 8MB. Create a drag-and-drop interface with preview functionality. Validate file format, size, and dimensions. Generate a perceptual hash of uploaded images and implement NSFW detection using OpenAI moderation API. Store approved images in MinIO storage (Endpoint: http://192.168.86.214:9000, Bucket: ncat-storage-test) and return secure URLs. Implement error handling for failed uploads.",
+      "testStrategy": "Test with various image formats, sizes, and content. Verify NSFW detection blocks inappropriate content (score > 0.8). Confirm successful storage in MinIO and proper URL generation. Test error cases including oversized files and invalid formats.",
       "subtasks": [
         {
           "id": 3.1,
           "title": "Implement drag-and-drop file upload UI",
           "description": "Create a user-friendly drag-and-drop interface with image preview functionality",
-          "status": "in-progress",
+          "status": "completed",
           "details": "Develop a responsive UI component that allows users to drag and drop image files or select them via file browser. Show a preview of the selected image before upload. Include visual feedback during the upload process."
         },
         {
           "id": 3.2,
           "title": "Create backend API endpoint for image uploads",
           "description": "Implement the server-side API endpoint that will receive and process image uploads",
-          "status": "in-progress",
+          "status": "completed",
           "details": "Create a RESTful API endpoint that accepts multipart/form-data uploads. Handle authentication and authorization for the upload process. Implement proper request validation and error handling."
         },
         {
           "id": 3.3,
-          "title": "Integrate with Cloudflare R2 storage",
-          "description": "Set up and configure Cloudflare R2 storage integration for the upload service",
-          "status": "pending",
-          "details": "Configure R2 bucket and access credentials. Implement helper functions for uploading files to R2, generating pre-signed URLs, and managing file metadata. Test the connection and file operations."
+          "title": "Integrate with MinIO storage",
+          "description": "Utilize the existing MinIO setup for the upload service",
+          "status": "completed",
+          "details": "Use the existing MinIO configuration (Endpoint: http://192.168.86.214:9000, Bucket: ncat-storage-test) as set up in Task 1.7. Implement helper functions for uploading files to MinIO, generating pre-signed URLs, and managing file metadata. Test the connection and file operations."
         },
         {
           "id": 3.4,
@@ -209,8 +195,8 @@
         {
           "id": 3.7,
           "title": "Design and implement storage key structure",
-          "description": "Create a logical structure for organizing uploaded files in R2 storage",
-          "status": "pending",
+          "description": "Create a logical structure for organizing uploaded files in MinIO storage",
+          "status": "completed",
           "details": "Design a file naming and path structure that supports efficient retrieval and organization. Consider user ID, upload date, and file type in the structure. Document the key structure for future reference."
         },
         {
@@ -224,57 +210,57 @@
     },
     {
       "id": 4,
-      "title": "Develop avatar generation service",
-      "description": "Create a service to transform selfies into comic avatars using GPT-Image-1",
-      "status": "pending",
+      "title": "Develop avatar generation service (OpenAI)",
+      "description": "Create a service to transform selfies into comic avatars using OpenAI DALL-E",
+      "status": "in-progress",
       "dependencies": [
         3
       ],
       "priority": "high",
-      "details": "Implement a service that sends the uploaded selfie to Replicate's GPT-Image-1 API with appropriate system prompts to generate a full-body comic avatar at 1024x1024 resolution. Create a polling mechanism to check job status until completion. Implement retry logic with exponential backoff (max 2 attempts). Store the resulting avatar URL and associate it with the user's session. Handle error cases and provide appropriate feedback. Implement compensation logic to refund credits on failed generations.",
-      "testStrategy": "Test with various selfie inputs. Verify successful API calls to Replicate and proper handling of responses. Test polling mechanism and retry logic. Confirm proper storage of avatar URLs. Test error handling for failed generations. Verify credit refund process works correctly when avatar generation fails.",
+      "details": "Implement a service that uses the OpenAI API (DALL-E 3 or DALL-E 2 for editing) to generate a full-body comic avatar at 1024x1024 resolution. Create appropriate prompts, potentially using the uploaded selfie URL or data via the edit endpoint. Handle API responses and store the resulting avatar URL in the database, associated with the user and original image. Handle error cases and provide appropriate feedback. Implement compensation logic to refund credits on failed generations.",
+      "testStrategy": "Test with various selfie inputs and prompts. Verify successful API calls to OpenAI and proper handling of responses. Test prompt variations. Confirm proper storage of avatar URLs in the database. Test error handling for failed generations. Verify credit refund process works correctly when avatar generation fails.",
       "subtasks": [
         {
           "id": 4.1,
-          "title": "Replicate GPT-Image-1 API Integration",
-          "description": "Implement the integration with Replicate's API for GPT-Image-1 model",
-          "status": "pending",
-          "details": "Create API client for Replicate. Implement authentication using environment variables for API keys. Set up the request payload structure for GPT-Image-1 model. Implement proper error handling for API responses."
+          "title": "OpenAI API Integration for Image Generation",
+          "description": "Implement the integration with OpenAI's API (DALL-E) for avatar generation",
+          "status": "in-progress",
+          "details": "Set up the OpenAI Node.js client. Implement authentication using the OPENAI_API_KEY environment variable. Implement functions to call the image generation (or edit) endpoint with appropriate parameters (model, prompt, size, image input if using edit). Implement basic error handling for API responses."
         },
         {
           "id": 4.2,
           "title": "System Prompt Design",
-          "description": "Design and implement effective system prompts for comic avatar generation",
-          "status": "pending",
-          "details": "Research optimal prompting techniques for GPT-Image-1. Design system prompts that consistently produce full-body comic avatars. Include parameters for 1024x1024 resolution. Test various prompt formulations to ensure consistent quality and style."
+          "description": "Design and implement effective prompts for comic avatar generation using DALL-E",
+          "status": "in-progress",
+          "details": "Research optimal prompting techniques for DALL-E 3 (or DALL-E 2 if editing). Design prompts that consistently produce full-body comic avatars at 1024x1024 resolution. Test various prompt formulations to ensure consistent quality and style. Consider how to incorporate user selfie details if using the edit endpoint."
         },
         {
           "id": 4.3,
-          "title": "Polling and Retry Mechanism",
-          "description": "Implement job status polling and retry logic",
-          "status": "pending",
-          "details": "Create a polling service to check generation job status at appropriate intervals. Implement exponential backoff strategy for polling (increasing wait times between checks). Add retry logic for failed API calls with maximum 2 retry attempts. Handle timeouts and long-running jobs appropriately."
+          "title": "Async Handling / Polling (If Needed)",
+          "description": "Implement job status polling or async handling if OpenAI calls are long-running",
+          "status": "completed",
+          "details": "Determine if OpenAI API calls require asynchronous handling. If so, implement a mechanism (e.g., API endpoint returning job ID, frontend polling, or Temporal workflow activity) to check generation status. Handle timeouts appropriately."
         },
         {
           "id": 4.4,
           "title": "Avatar Asset Storage",
           "description": "Implement storage for generated avatar assets",
           "status": "pending",
-          "details": "Create a storage mechanism for avatar URLs returned by Replicate. Associate avatars with user sessions in the database. Implement cleanup process for orphaned or expired avatar assets. Ensure proper indexing for efficient retrieval."
+          "details": "Store the avatar URL returned by OpenAI in the Avatar database record. Ensure association with the user and the original Image record. Consider if the generated image needs to be downloaded from OpenAI and stored in our own storage (MinIO) for persistence or CDN delivery, or if linking directly to the OpenAI URL is sufficient (URLs expire). Implement cleanup logic if storing locally."
         },
         {
           "id": 4.5,
           "title": "Error Handling",
           "description": "Implement comprehensive error handling for the avatar generation process",
           "status": "pending",
-          "details": "Create error classification system for different failure modes (API errors, timeout, content policy violations, etc.). Implement appropriate user-facing error messages. Log detailed error information for debugging. Create monitoring alerts for critical error patterns."
+          "details": "Create error classification system for different failure modes (API errors, invalid prompts, content policy violations, etc.). Implement appropriate user-facing error messages. Log detailed error information. Create monitoring alerts for critical error patterns. Ensure failed states are recorded in the database (e.g., Avatar status field, RenderHistory)."
         },
         {
           "id": 4.6,
           "title": "Compensation Logic",
           "description": "Implement credit refund system for failed generations",
           "status": "pending",
-          "details": "Create a compensation service to refund credits when avatar generation fails. Implement transaction logging for all credit refunds. Add admin dashboard component to review and manage compensation events. Ensure proper synchronization to prevent duplicate refunds."
+          "details": "Create a compensation service or logic to refund credits when avatar generation fails (e.g., OpenAI API error, content policy violation). Implement transaction logging for all credit refunds. Add admin dashboard component to review and manage compensation events. Ensure proper synchronization to prevent duplicate refunds."
         }
       ]
     },

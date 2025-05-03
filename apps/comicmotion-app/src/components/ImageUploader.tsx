@@ -1,7 +1,7 @@
 'use client'; // Required for hooks like useState, useEffect
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { useDropzone, FileRejection } from 'react-dropzone';
+import { useDropzone, FileRejection, Accept } from 'react-dropzone';
 import { useQuery } from '@tanstack/react-query'; // Import useQuery
 
 // Interface for the job status API response
@@ -10,6 +10,14 @@ interface JobStatus {
   avatarUrl?: string | null;
   error?: string | null;
 }
+
+// Define constants for validation (matching the backend)
+const ALLOWED_CONTENT_TYPES: Accept = {
+  'image/jpeg': ['.jpeg', '.jpg'],
+  'image/png': ['.png'],
+};
+const MAX_FILE_SIZE_MB = 8;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 interface ImageUploaderProps {
   onUploadComplete: (uploadInfo: { key: string; previewUrl: string; filename: string; contentType: string; size: number; originalUrl: string }) => void;
@@ -20,7 +28,6 @@ interface ImageUploaderProps {
   onAvatarGenerationComplete?: (result: { success: boolean; avatarId: string; avatarUrl?: string | null; error?: string | null }) => void;
 }
 
-const MAX_SIZE = 8 * 1024 * 1024; // 8MB from PRD
 const MINIO_ENDPOINT = process.env.NEXT_PUBLIC_S3_ENDPOINT_URL;
 const BUCKET_NAME = process.env.NEXT_PUBLIC_S3_BUCKET_NAME;
 
@@ -98,10 +105,11 @@ export function ImageUploader({
       let specificErrorMsg = error.message; // Default message
 
       if (error.code === 'file-too-large') {
-        specificErrorMsg = `File is larger than ${MAX_SIZE / 1024 / 1024}MB`;
+        specificErrorMsg = `File is larger than ${MAX_FILE_SIZE_MB}MB`; // Use MB constant
       } else if (error.code === 'file-invalid-type') {
         specificErrorMsg = 'Invalid file type. Only JPG/PNG allowed.';
       }
+      console.error('File rejected:', fileRejections);
       setErrorMessage(specificErrorMsg);
       onUploadError(specificErrorMsg); // Notify parent
       return;
@@ -118,18 +126,12 @@ export function ImageUploader({
     }
   }, [onUploadError]);
 
-  const dropzoneOptions = {
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'image/jpeg': [],
-      'image/png': [],
-    },
-    maxSize: MAX_SIZE,
+    accept: ALLOWED_CONTENT_TYPES,
+    maxSize: MAX_FILE_SIZE_BYTES,
     multiple: false,
-  };
-
-  const dropzone = useDropzone(dropzoneOptions);
-  const { getRootProps, getInputProps, isDragActive } = dropzone;
+  });
 
   const handleUploadAndGenerate = async () => {
     if (!selectedFile || !preview) return;

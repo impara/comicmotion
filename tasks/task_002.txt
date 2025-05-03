@@ -23,9 +23,9 @@ Register ComicMotion application with Clerk, install SDK, configure environment 
 ### Details:
 Register application with Google Cloud Platform, obtain OAuth credentials, configure Clerk to use Google as a social sign-in provider, and test the authentication flow.
 
-## 2.3. Implement JWT/Session Management [pending]
+## 2.3. Ensure Clerk JWT/Session Management is correctly implemented via middleware [completed]
 ### Dependencies: None
-### Description: Configure secure session handling and JWT implementation
+### Description: Ensure Clerk JWT/Session Management is correctly implemented via middleware
 ### Details:
 Set up secure JWT configuration with appropriate expiration times, implement refresh token logic, and ensure sessions are properly maintained across the application.
 
@@ -53,7 +53,7 @@ Design and implement database tables/collections for storing user-specific data 
 ### Details:
 Set up Next.js middleware to protect routes based on authentication status and user roles, redirecting unauthorized access attempts appropriately.
 
-## 2.8. Apply Security Best Practices [pending]
+## 2.8. Apply Security Best Practices [completed]
 ### Dependencies: None
 ### Description: Implement security measures according to OWASP and SOC2 standards
 ### Details:

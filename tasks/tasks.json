@@ -96,9 +96,9 @@
         },
         {
           "id": 2.3,
-          "title": "Implement JWT/Session Management",
-          "description": "Configure secure session handling and JWT implementation",
-          "status": "pending",
+          "title": "Ensure Clerk JWT/Session Management is correctly implemented via middleware",
+          "description": "Ensure Clerk JWT/Session Management is correctly implemented via middleware",
+          "status": "completed",
           "details": "Set up secure JWT configuration with appropriate expiration times, implement refresh token logic, and ensure sessions are properly maintained across the application."
         },
         {
@@ -133,7 +133,7 @@
           "id": 2.8,
           "title": "Apply Security Best Practices",
           "description": "Implement security measures according to OWASP and SOC2 standards",
-          "status": "pending",
+          "status": "completed",
           "details": "Apply security headers, CSRF protection, rate limiting, and other security measures to protect against common vulnerabilities. Document security implementations for SOC2 compliance."
         }
       ]

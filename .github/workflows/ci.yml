@@ -48,6 +48,17 @@ jobs:
         working-directory: .
 
       - name: Build
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          # You might need other env vars here depending on your app
+          # For Clerk, if not using NEXT_PUBLIC_ prefix and needing them server-side during build:
+          # CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          # NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          # NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
+          # NEXT_PUBLIC_CLERK_SIGN_UP_URL: /sign-up
+          # NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /dashboard
+          # NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /dashboard
         run: npm run build
         working-directory: .
 

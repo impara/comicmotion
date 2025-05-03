@@ -47,6 +47,20 @@ jobs:
         run: npm run test
         working-directory: .
 
+      - name: Debug Environment Variables Before Build
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+        run: |
+          echo "Attempting to print relevant env vars:"
+          echo "STRIPE_SECRET_KEY exists: $( [[ -z "${STRIPE_SECRET_KEY}" ]] && echo "No" || echo "Yes (masked)" )"
+          echo "STRIPE_WEBHOOK_SECRET exists: $( [[ -z "${STRIPE_WEBHOOK_SECRET}" ]] && echo "No" || echo "Yes (masked)" )"
+          echo "Listing all env vars containing STRIPE:"
+          printenv | grep STRIPE || echo "No STRIPE vars found"
+          echo "Listing all env vars containing NEXT:"
+          printenv | grep NEXT || echo "No NEXT vars found"
+        working-directory: . # Run this at the root where turbo runs
+
       - name: Build
         env:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}

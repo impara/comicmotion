@@ -157,8 +157,15 @@ export function ImageUploader({
       });
 
       if (!presignResponse.ok) {
-        const errorData = await presignResponse.json();
-        throw new Error(errorData.error || 'Failed to get upload URL');
+        let errorMsg = 'Failed to get upload URL.'; // Default message
+        try {
+          // Try to parse the structured error from our API
+          const errorData = await presignResponse.json();
+          errorMsg = errorData.error || errorMsg; // Use API error if available
+        } catch (parseError) {
+          console.warn('Could not parse presign error response JSON.', parseError);
+        }
+        throw new Error(errorMsg);
       }
 
       const { uploadUrl, key } = await presignResponse.json();
@@ -223,8 +230,15 @@ export function ImageUploader({
       });
 
       if (!generateResponse.ok) {
-        const errorData = await generateResponse.json();
-        throw new Error(errorData.error || 'Failed to start avatar generation');
+        let errorMsg = 'Failed to start avatar generation.'; // Default message
+        try {
+           // Try to parse the structured error from our API
+          const errorData = await generateResponse.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch (parseError) {
+             console.warn('Could not parse generation error response JSON.', parseError);
+        }
+        throw new Error(errorMsg);
       }
 
       // Start polling by setting the job ID
@@ -235,8 +249,14 @@ export function ImageUploader({
 
     } catch (error: unknown) {
       let message = 'An unexpected error occurred.';
+      // Attempt to parse structured API errors
       if (error instanceof Error) {
-        message = error.message;
+        message = error.message; // Default to standard message
+        // Check if it might be a failed fetch response (tricky without knowing the exact error type)
+        // A more robust way involves checking error.response if using a library like axios,
+        // but with native fetch, we often get a generic TypeError for network errors,
+        // or the error occurs *after* fetch resolves when processing the response body.
+        // Let's refine the error handling within the specific fetch calls instead.
       }
       console.error("Operation error:", error);
       setErrorMessage(message);

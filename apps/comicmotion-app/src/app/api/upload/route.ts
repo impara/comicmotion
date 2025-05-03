@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ uploadUrl, key: uniqueKey });
 
   } catch (error) {
-    console.error("Error generating pre-signed URL:", error);
+    console.error(`Error generating pre-signed URL for user ${userId}:`, error);
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({ error: `Failed to get upload URL: ${errorMessage}` }, { status: 500 });
   }

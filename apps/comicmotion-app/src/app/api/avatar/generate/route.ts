@@ -41,7 +41,7 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
 
     // --- NSFW Moderation Check --- 
     try {
-      console.log(`Checking image moderation for URL: ${originalUrl}`);
+      console.log(`Checking image moderation for URL: ${originalUrl} (User: ${userId})`);
       const moderationResponse = await openai.moderations.create({
         input: originalUrl, // Use the direct image URL
       });
@@ -59,7 +59,7 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
       // TODO: Optionally store moderation scores `result.category_scores` in the Image record later
 
     } catch (moderationError) {
-        console.error(`OpenAI Moderation API call failed for URL ${originalUrl}:`, moderationError);
+        console.error(`OpenAI Moderation API call failed for URL ${originalUrl} (User: ${userId}):`, moderationError);
         // Decide if this should block generation or just log the error
         // For now, let's block it to be safe.
         return NextResponse.json({ error: 'Failed to check image content policy.' }, { status: 500 });
@@ -94,9 +94,9 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
         });
         avatarRecordId = initialRecord.avatarId;
         imageRecordId = initialRecord.imageId; // Store imageId
-        console.log(`Created Image record: ${imageRecordId}, Avatar record: ${avatarRecordId} (status: queued)`);
+        console.log(`Created Image record: ${imageRecordId}, Avatar record: ${avatarRecordId} (status: queued) for User: ${userId}`);
     } catch (dbError) {
-        console.error("Database transaction failed:", dbError);
+        console.error(`Database transaction failed for User ${userId}:`, dbError);
         // Check for specific Prisma errors if needed
         return NextResponse.json({ error: 'Failed to create initial generation records.' }, { status: 500 });
     }
@@ -107,7 +107,7 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
       // Get the Temporal client instance
       const temporalClient = await getTemporalClient(); 
       
-      console.log(`Initiating Temporal workflow for avatarId: ${avatarRecordId}`);
+      console.log(`Initiating Temporal workflow for avatarId: ${avatarRecordId} (User: ${userId})`);
       
       // Define workflow name and arguments (adjust names if needed)
       const workflowName = 'generateAvatarWorkflow'; 
@@ -125,10 +125,10 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
         }], 
       });
      
-     console.log(`Successfully started Temporal workflow '${workflowName}' with ID 'avatar-${avatarRecordId}' on task queue '${taskQueueName}'.`);
+     console.log(`Successfully started Temporal workflow '${workflowName}' with ID 'avatar-${avatarRecordId}' on task queue '${taskQueueName}' for User: ${userId}.`);
 
     } catch (temporalError) {
-        console.error(`Failed to start Temporal workflow for avatarId ${avatarRecordId}:`, temporalError);
+        console.error(`Failed to start Temporal workflow for avatarId ${avatarRecordId} (User: ${userId}):`, temporalError);
         // Compensation logic: Mark DB record as failed if workflow start fails
         try {
              await prisma.avatar.update({
@@ -138,9 +138,9 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
                      error: `Workflow initiation failed: ${temporalError instanceof Error ? temporalError.message : 'Unknown error'}`
                  }
              });
-             console.log(`Updated Avatar record ${avatarRecordId} status to 'failed' due to workflow start error.`);
+             console.log(`Updated Avatar record ${avatarRecordId} status to 'failed' due to workflow start error (User: ${userId}).`);
         } catch (dbUpdateError) {
-             console.error(`CRITICAL: Failed to update avatar ${avatarRecordId} status to failed after Temporal error:`, dbUpdateError);
+             console.error(`CRITICAL: Failed to update avatar ${avatarRecordId} status to failed after Temporal error (User: ${userId}):`, dbUpdateError);
              // Log this critical failure, manual intervention might be needed
         }
         // Return error response to the client
@@ -152,7 +152,7 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
     return NextResponse.json({ avatarId: avatarRecordId });
 
   } catch (error) {
-    console.error("Error in generate route:", error);
+    console.error(`Error in generate route for User ${userId}:`, error);
     // Use const as message is not reassigned
     const message = 'Failed to initiate avatar generation.';
     // if (error instanceof Error) { // Keep this commented out - avoids exposing internal details

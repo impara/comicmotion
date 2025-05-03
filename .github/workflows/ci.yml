@@ -13,42 +13,45 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: List all files after checkout
+        run: ls -lR
+
       - name: Debug app lock file
-        run: ls -l comicmotion/apps/comicmotion-app/package-lock.json
+        run: ls -l apps/comicmotion-app/package-lock.json
 
       - name: Use Node.js 20.x
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: "npm"
-          cache-dependency-path: comicmotion/apps/comicmotion-app/package-lock.json
+          cache-dependency-path: apps/comicmotion-app/package-lock.json
 
       # Cache Turborepo build cache for faster builds
       - name: Cache Turborepo
         uses: actions/cache@v4
         with:
-          path: comicmotion/.turbo
+          path: .turbo
           key: ${{ runner.os }}-turbo-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-turbo-
 
       - name: Install dependencies (with Turborepo support)
         run: npm install
-        working-directory: comicmotion
+        working-directory: .
 
       - name: Lint
         run: npm run lint
-        working-directory: comicmotion
+        working-directory: apps/comicmotion-app
 
       - name: Test
         run: npm run test
-        working-directory: comicmotion
+        working-directory: .
 
       - name: Build
         run: npm run build
-        working-directory: comicmotion
+        working-directory: .
 
       # Add deployment step here (e.g., Vercel, AWS, etc.)
       # - name: Deploy
       #   run: echo "Deploy step goes here"
-      #   working-directory: comicmotion
+      #   working-directory: .

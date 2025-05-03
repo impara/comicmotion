@@ -35,6 +35,8 @@ coverage/
 *.local
 
 # Ignore lockfiles at root if using workspaces
-package-lock.json
+/package-lock.json
 yarn.lock
 pnpm-lock.yaml 
+/tasks/
+.cursor-rules.yaml

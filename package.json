@@ -8,7 +8,9 @@
   ],
   "packageManager": "npm@10.5.0",
   "scripts": {
-    "dev": "turbo run dev"
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "build": "turbo run build"
   },
   "devDependencies": {
     "turbo": "^2.5.2"

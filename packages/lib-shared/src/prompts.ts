@@ -1,5 +1,3 @@
-// Moved to packages/lib-shared/src/prompts.ts
-
 /**
  * Prompts for AI image generation services.
  */
@@ -38,26 +36,41 @@ export function getAvatarGenerationPrompt(options?: AvatarPromptOptions): string
 // --- Replicate Scene Generation --- //
 
 // TODO: Define prompts for different themes (city, fantasy, neon) - Subtask 6.2
+// Refined based on Subtask 5.4
 export function getSceneGenerationPrompt(theme: string, avatarImageUrl: string): object {
     // This needs to return the full input object for the Replicate model
-    // Placeholder - needs specific model input structure
-    let themePrompt = `A scene in a ${theme} setting.`;
-    if (theme === 'city') {
-        themePrompt = "A dynamic comic book scene background of a bustling modern cityscape at daytime. Wide angle. HD 1920x1080.";
-    } else if (theme === 'fantasy') {
-        themePrompt = "A vibrant comic book scene background of an epic fantasy landscape with mountains and castles. Wide angle. HD 1920x1080.";
-    } else if (theme === 'neon') {
-        themePrompt = "A comic book scene background of a futuristic neon-lit cyberpunk city street at night. Wide angle. HD 1920x1080.";
+    // Placeholder - needs specific model input structure. Adjust based on the actual Replicate model used in Task 6.
+    let basePrompt = '';
+    let negativePrompt = 'text, words, letters, signature, watermark, deformed, blurry, low quality'; // Common negative prompt
+
+    switch (theme.toLowerCase()) {
+        case 'city':
+            basePrompt = "A dynamic comic book scene background of a bustling modern cityscape at daytime. Wide angle.";
+            break;
+        case 'fantasy':
+            basePrompt = "A vibrant comic book scene background of an epic fantasy landscape with mountains and castles. Wide angle.";
+            break;
+        case 'neon':
+            basePrompt = "A comic book scene background of a futuristic neon-lit cyberpunk city street at night. Wide angle.";
+            break;
+        default:
+            console.warn(`Unknown theme: ${theme}. Using default prompt.`);
+            basePrompt = "A generic comic book style background scene.";
     }
 
-    // Example input structure (adjust based on actual Replicate model)
+    const fullPrompt = `${basePrompt} Featuring the character from the input image composited naturally into the scene. HD 1920x1080.`;
+
+    // Example input structure (adjust based on actual Replicate model, e.g., Stability AI SDXL)
+    // Consult the specific Replicate model documentation for exact parameters.
     return {
-        prompt: themePrompt, 
-        // Assuming the model takes an image input for the avatar
-        image: avatarImageUrl, 
-        width: 1920, 
-        height: 1080,
-        // Add other necessary model parameters
+        prompt: fullPrompt, 
+        negative_prompt: negativePrompt,
+        image: avatarImageUrl, // Assuming the model takes an input image for the character
+        width: 1920, // Required output size
+        height: 1080, // Required output size
+        num_inference_steps: 30, // Example parameter, adjust as needed
+        guidance_scale: 7.5,     // Example parameter, adjust as needed
+        // Add other necessary model parameters (e.g., scheduler, seed)
     };
 }
 

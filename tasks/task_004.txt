@@ -3,9 +3,9 @@
 # Status: in-progress
 # Dependencies: 3
 # Priority: high
-# Description: Create a service to transform selfies into comic avatars using OpenAI DALL-E
+# Description: Create a service to transform selfies into comic avatars using OpenAI GPT-image-1
 # Details:
-Implement a service that uses the OpenAI API (DALL-E 3 or DALL-E 2 for editing) to generate a full-body comic avatar at 1024x1024 resolution. Create appropriate prompts, potentially using the uploaded selfie URL or data via the edit endpoint. Handle API responses and store the resulting avatar URL in the database, associated with the user and original image. Handle error cases and provide appropriate feedback. Implement compensation logic to refund credits on failed generations.
+Implement a service that uses the OpenAI API (GPT-image-1) to generate a full-body comic avatar at 1024x1024 resolution. Create appropriate prompts, potentially using the uploaded selfie URL or data via the edit endpoint. Handle API responses and store the resulting avatar URL in the database, associated with the user and original image. Handle error cases and provide appropriate feedback. Implement compensation logic to refund credits on failed generations.
 
 # Test Strategy:
 Test with various selfie inputs and prompts. Verify successful API calls to OpenAI and proper handling of responses. Test prompt variations. Confirm proper storage of avatar URLs in the database. Test error handling for failed generations. Verify credit refund process works correctly when avatar generation fails.
@@ -13,15 +13,15 @@ Test with various selfie inputs and prompts. Verify successful API calls to Open
 # Subtasks:
 ## 4.1. OpenAI API Integration for Image Generation [in-progress]
 ### Dependencies: None
-### Description: Implement the integration with OpenAI's API (DALL-E) for avatar generation
+### Description: Implement the integration with OpenAI's API (GPT-image-1) for avatar generation
 ### Details:
 Set up the OpenAI Node.js client. Implement authentication using the OPENAI_API_KEY environment variable. Implement functions to call the image generation (or edit) endpoint with appropriate parameters (model, prompt, size, image input if using edit). Implement basic error handling for API responses.
 
 ## 4.2. System Prompt Design [in-progress]
 ### Dependencies: None
-### Description: Design and implement effective prompts for comic avatar generation using DALL-E
+### Description: Design and implement effective prompts for comic avatar generation using GPT-image-1
 ### Details:
-Research optimal prompting techniques for DALL-E 3 (or DALL-E 2 if editing). Design prompts that consistently produce full-body comic avatars at 1024x1024 resolution. Test various prompt formulations to ensure consistent quality and style. Consider how to incorporate user selfie details if using the edit endpoint.
+Research optimal prompting techniques for GPT-image-1. Design prompts that consistently produce full-body comic avatars at 1024x1024 resolution. Test various prompt formulations to ensure consistent quality and style. Consider how to incorporate user selfie details if using the edit endpoint.
 
 ## 4.3. Async Handling / Polling (If Needed) [completed]
 ### Dependencies: None

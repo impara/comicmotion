@@ -1,5 +1,3 @@
-// Moved to packages/lib-shared/src/openai.ts
-
 import OpenAI from 'openai';
 // import { Readable } from 'stream'; // Remove unused import
 

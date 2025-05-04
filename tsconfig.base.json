@@ -20,7 +20,6 @@
 
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true, // Base config usually doesn't emit files itself
     "jsx": "preserve", // Preserve JSX for frameworks to handle
 
     // Path Aliases (Optional - configure as needed)

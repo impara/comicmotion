@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { PrismaClient, Prisma } from 'db'; // Import Prisma namespace for types
 import { auth } from '@clerk/nextjs/server'; // Re-enable auth
 import { getTemporalClient } from '@/lib/temporalClient'; // Import the Temporal client getter
-import { openai } from '@/lib/openai'; // Import the initialized OpenAI client
+import { openai } from 'lib-shared'; // Import the initialized OpenAI client from shared package
 
 // TODO: Import and initialize Temporal Client properly
 // import { Connection, Client } from '@temporalio/client';
@@ -11,6 +11,10 @@ import { openai } from '@/lib/openai'; // Import the initialized OpenAI client
 // const temporalClient = new Client();
 
 const prisma = new PrismaClient();
+
+// Define constants for validation (matching client-side)
+const MAX_FILE_SIZE_MB = 8;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 // Define a simple type for the response
 interface GenerateApiResponse {
@@ -38,6 +42,15 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
     if (!imageKey || !originalUrl) {
         return NextResponse.json({ error: 'Missing imageKey or originalUrl' }, { status: 400 });
     }
+
+    // --- Server-side File Size Validation ---
+    if (typeof size !== 'number' || size <= 0) {
+        return NextResponse.json({ error: 'Invalid or missing file size.' }, { status: 400 });
+    }
+    if (size > MAX_FILE_SIZE_BYTES) {
+        return NextResponse.json({ error: `File size exceeds the ${MAX_FILE_SIZE_MB}MB limit.` }, { status: 400 });
+    }
+    // --- End File Size Validation ---
 
     // --- NSFW Moderation Check --- 
     try {
@@ -79,7 +92,9 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
                 originalUrl: originalUrl,
                 fileName: filename || imageKey.split('/').pop(),
                 fileType: contentType,
-                fileSize: size,
+                fileSize: size, // Store the validated file size
+                // width: // TBD: Requires image processing to get dimensions
+                // height: // TBD: Requires image processing to get dimensions
             }
           });
           const avatarRec = await tx.avatar.create({

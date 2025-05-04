@@ -2,10 +2,11 @@
   "name": "temporal-worker",
   "version": "1.0.0",
   "private": true,
+  "main": "src/index.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/worker.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/worker.ts"
+    "dev": "ts-node-dev --respawn --project tsconfig.json src/worker.ts"
   },
   "dependencies": {
     "@temporalio/client": "^1.9.3",
@@ -13,7 +14,8 @@
     "@temporalio/activity": "^1.9.3",
     "@temporalio/workflow": "^1.9.3",
     "db": "*",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "lib-shared": "*"
   },
   "devDependencies": {
     "@types/node": "^20",

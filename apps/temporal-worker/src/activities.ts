@@ -1,10 +1,11 @@
 // Placeholder for activities - will contain functions executed by the worker
 
 import { PrismaClient } from 'db'; // Example: Accessing Prisma client
-// import { OpenAI } from 'openai'; // Example: Using OpenAI client
+// Import from the new shared package
+import { openai } from 'lib-shared'; 
+import { getAvatarGenerationPrompt } from 'lib-shared';
 
 const prisma = new PrismaClient();
-// const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
  * Interface for the input arguments of the generateAvatar activity.
@@ -28,35 +29,64 @@ export interface GenerateAvatarOutput {
  */
 export async function generateAvatar(input: GenerateAvatarInput): Promise<GenerateAvatarOutput> {
   console.log('[Activity:generateAvatar] Started for avatarId:', input.avatarId);
+  const { avatarId, imageId, userId, originalImageUrl } = input; // Destructure for easier access
 
-  // 1. TODO: Implement OpenAI call (DALL-E) 
-  //    - Use input.originalImageUrl or fetch image data using input.imageId
-  //    - Construct appropriate prompts
-  console.log('[Activity:generateAvatar] Calling OpenAI (placeholder)... for imageId:', input.imageId);
-  // const generatedAvatarUrl = await callOpenAI(...);
-  const generatedAvatarUrl = `https://placekitten.com/g/1024/1024`; // Replace with actual OpenAI result URL
-  await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate AI generation time
+  let generatedAvatarUrl = '';
 
-  // 2. TODO: Implement logic to store the generated avatar if needed
-  //    - e.g., download from OpenAI URL and upload to our MinIO
-
-  // 3. Update database record (this part could potentially be another activity)
   try {
+    // Update status to 'processing' immediately
     await prisma.avatar.update({
-      where: { id: input.avatarId },
+        where: { id: avatarId },
+        data: { status: 'processing_avatar' },
+    });
+    console.log(`[Activity:generateAvatar] Updated Avatar record ${avatarId} status to processing_avatar.`);
+
+    // 1. Generate Prompt
+    const prompt = getAvatarGenerationPrompt(); // Use default prompt for now
+    console.log(`[Activity:generateAvatar] Generated prompt for ${avatarId}: ${prompt}`);
+
+    // 2. Implement OpenAI call (DALL-E)
+    console.log(`[Activity:generateAvatar] Calling OpenAI DALL-E 3 for avatarId: ${avatarId}...`);
+    
+    // TODO: Decide if using generate or edit based on originalImageUrl
+    // For now, assume generate based on prompt only
+    const response = await openai.images.generate({
+      model: "dall-e-3", // Ensure this matches lib/openai if constants defined there
+      prompt: prompt,
+      n: 1,
+      size: "1024x1024",
+      quality: "standard", // Use standard for DALL-E 3 unless HD is explicitly needed and budgeted
+      response_format: "url",
+      user: userId, // Pass user ID for moderation tracking
+    });
+
+    generatedAvatarUrl = response.data?.[0]?.url ?? ''; // Use nullish coalescing
+    if (!generatedAvatarUrl) {
+        throw new Error('OpenAI API did not return an image URL.');
+    }
+    console.log(`[Activity:generateAvatar] OpenAI generated URL for ${avatarId}: ${generatedAvatarUrl}`);
+
+    // 3. TODO: Implement logic to store the generated avatar if needed (e.g., download & upload to MinIO)
+    // For now, we just store the OpenAI URL.
+
+    // 4. Update database record with success status and URL
+    await prisma.avatar.update({
+      where: { id: avatarId },
       data: {
-        status: 'generating_scene', // Or 'completed' if scene generation is separate
+        status: 'completed', // Mark as completed (or next step like 'generating_scene')
         avatarUrl: generatedAvatarUrl,
         error: null, // Clear any previous errors
       },
     });
-    console.log(`[Activity:generateAvatar] Updated Avatar record ${input.avatarId} status and URL.`);
-  } catch (dbError) {
-    console.error(`[Activity:generateAvatar] Failed to update Avatar record ${input.avatarId}:`, dbError);
-    // Rethrow the error to fail the activity and potentially the workflow
-    throw dbError;
+    console.log(`[Activity:generateAvatar] Updated Avatar record ${avatarId} status to completed and saved URL.`);
+
+  } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown activity error';
+      console.error(`[Activity:generateAvatar] Failed for avatarId ${avatarId}:`, error);
+      // Don't update DB here; let the workflow catch and call the compensation activity
+      throw error; // Rethrow to fail the activity
   }
-  
+
   // Return the result needed by the workflow
   return { avatarUrl: generatedAvatarUrl };
 }

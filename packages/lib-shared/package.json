@@ -1,0 +1,26 @@
+{
+  "name": "lib-shared",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+  },
+  "dependencies": {
+    "openai": "^4.97.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5",
+    "eslint": "^9",
+    "tsconfig": "*"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./openai": "./dist/openai.js",
+    "./prompts": "./dist/prompts.js"
+  }
+}

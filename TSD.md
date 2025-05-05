@@ -1,6 +1,6 @@
 ### Technical Solution Design (TSD)
 
-ComicMotion v 1.0 – “Selfie-to-Animated Short”  
+ComicMotion v 1.0 – "Selfie-to-Animated Short"  
 _Last updated: 02 May 2025_
 
 ---
@@ -18,7 +18,7 @@ _Last updated: 02 May 2025_
 | Owner      | Lead Solutions Architect                                     |
 | Reviewers  | Engineering, DevOps, Security, Product                       |
 | Status     | Draft 🔄                                                     |
-| Source PRD | “ComicMotion v 1.0 – Selfie-to-Animated Short” (02 May 2025) |
+| Source PRD | "ComicMotion v 1.0 – Selfie-to-Animated Short" (02 May 2025) |
 
 ---
 
@@ -95,13 +95,13 @@ Key patterns applied:
 **Data Models (simplified TS types)**
 
 ```ts
-type Theme = "city" | "fantasy" | "neon";
+type Theme = 'city' | 'fantasy' | 'neon';
 type JobStatus =
-  | "queued"
-  | "avatar_done"
-  | "scene_done"
-  | "video_done"
-  | "failed";
+  | 'queued'
+  | 'avatar_done'
+  | 'scene_done'
+  | 'video_done'
+  | 'failed';
 interface JobProgress {
   id: string;
   userId: string;
@@ -157,11 +157,11 @@ API-->>FE: 202 jobId
 
 ### 5.3 Temporal Orchestrator _(Core TDS)_
 
-| Step | Activity       | Retries | Compensating Action         |
-| ---- | -------------- | ------- | --------------------------- |
-| A1   | GenerateAvatar | 2       | Issue credit refund         |
-| A2   | GenerateScene  | 2       | Rollback avatar (delete R2) |
-| A3   | GenerateVideo  | 2       | Rollback scene              |
+| Step | Activity       | Replicate Model Used    | Retries | Compensating Action         |
+| ---- | -------------- | ----------------------- | ------- | --------------------------- |
+| A1   | GenerateAvatar | `openai/gpt-image-1`    | 2       | Issue credit refund         |
+| A2   | GenerateScene  | `openai/gpt-image-1`    | 2       | Rollback avatar (delete R2) |
+| A3   | GenerateVideo  | `minimax/video-01-live` | 2       | Rollback scene              |
 
 **State Diagram**
 
@@ -191,10 +191,10 @@ stateDiagram-v2
 
 ### 5.4 External AI Service Adapters
 
-| Adapter      | API                      | Timeout | Fallback |
-| ------------ | ------------------------ | ------- | -------- |
-| ReplicateGPT | REST POST `/predictions` | 60 s    | Retry ×2 |
-| MinimaxVideo | REST POST `/predictions` | 180 s   | Retry ×2 |
+| Adapter           | Service Endpoint Used    | Target Model(s)         | Timeout | Fallback |
+| ----------------- | ------------------------ | ----------------------- | ------- | -------- |
+| Replicate Adapter | REST POST `/predictions` | `openai/gpt-image-1`    | 60 s    | Retry ×2 |
+|                   |                          | `minimax/video-01-live` | 180 s   | Retry ×2 |
 
 **Security** – Keys stored in HashiCorp Vault, injected via short-lived env vars.
 

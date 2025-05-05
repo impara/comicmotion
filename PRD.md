@@ -1,6 +1,6 @@
 ### Product Requirements Document (PRD)
 
-ComicMotion v 1.0 – “Selfie-to-Animated Short”
+ComicMotion v 1.0 – "Selfie-to-Animated Short"
 
 | Field        | Detail                                                  |
 | ------------ | ------------------------------------------------------- |
@@ -43,14 +43,14 @@ Core flow only; templates, audio, and API in later releases.
 | ---- | ----------------------------------------------------------------- | -------- |
 | 1    | Upload selfie (JPG/PNG ≤8 MB)                                     | P0       |
 | 2    | Call GPT-Image-1 → full-body comic avatar (1024×1024)             | P0       |
-| 3    | Display 3 “theme” thumbnails (city, fantasy, neon)                | P0       |
+| 3    | Display 3 "theme" thumbnails (city, fantasy, neon)                | P0       |
 | 4    | Generate 1920 × 1080 scene with selected theme                    | P0       |
 | 5    | Animate scene to 6- or 10-second MP4 via video-01-live            | P0       |
 | 6    | Progress tracker & ETA                                            | P0       |
 | 7    | Download MP4 or copy share-link                                   | P0       |
 | 8    | Sign-up/login, credit counter, Stripe billing                     | P0       |
 | 9    | Content safety filter (OpenAI moderation + imghash nudity detect) | P0       |
-| 10   | Render history & delete request (“Right to Erasure”)              | P1       |
+| 10   | Render history & delete request ("Right to Erasure")              | P1       |
 | 11   | Watermark for Free tier, toggled off for paid                     | P1       |
 
 Out-of-scope for v1:  
@@ -65,19 +65,19 @@ Out-of-scope for v1:
 
 ##### 6.2 Avatar Generation
 
-- POST to Replicate GPT-Image-1 endpoint with system prompt + user selfie.
+- POST to Replicate API targeting the `openai/gpt-image-1` model with system prompt + user selfie URL.
 - Poll job until `succeeded`; store result URL.
 - Retry logic: max 2 attempts, exponential backoff.
 
 ##### 6.3 Scene Generation
 
-- Provide avatar URL as conditioning image.
-- Inject theme-specific prompt + “horizontal HD, 1920×1080”.
-- Same polling & storage flow.
+- POST to Replicate API targeting the `openai/gpt-image-1` model, providing the generated avatar URL from step 6.2 as input image.
+- Inject theme-specific prompt + instruct model to generate HD scene (1920×1080 via aspect ratio) incorporating the input avatar.
+- Same polling & storage flow as avatar generation.
 
 ##### 6.4 Animation Service
 
-- Send HD scene to video-01-live with default “walk-forward” animation & mild camera pan.
+- Send HD scene to video-01-live with default "walk-forward" animation & mild camera pan.
 - Allow duration param (6 s default, 10 s for paid).
 - On completion, transcode to H.264 MP4, 30 fps.
 
@@ -109,9 +109,9 @@ Out-of-scope for v1:
 
 #### 8. User Stories (abridged)
 
-1. _As a new user,_ I can sign up with Google so I’m ready in <30 s.
+1. _As a new user,_ I can sign up with Google so I'm ready in <30 s.
 2. _As a free user,_ I can see remaining credits after each render.
-3. _As a creator,_ I can pick a “cyberpunk” theme so my clip matches my channel aesthetic.
+3. _As a creator,_ I can pick a "cyberpunk" theme so my clip matches my channel aesthetic.
 4. _As a marketer,_ I can pay to remove the watermark for brand safety.
 5. _As support,_ I can refund credits on failed jobs.
 
@@ -120,7 +120,7 @@ Out-of-scope for v1:
 - Clean, card-based steps (Progress: 1 ▶ 2 ▶ 3).
 - Show a looping skeleton loader GIF while polling Replicate.
 - Theme picker uses hover previews (static thumbnails).
-- Failure modal with friendly copy & “Try again (no credit charge)”.
+- Failure modal with friendly copy & "Try again (no credit charge)".
 
 #### 10. Dependencies
 
@@ -164,7 +164,7 @@ Mitigations: add status polling & auto-refund; maintain fallback queue to re-try
 
 1. Should we cache commonly used themes to reduce cost?
 2. Minimum selfie resolution required for acceptable avatar fidelity?
-3. Legal review needed for cross-border data transfer to Replicate’s region?
+3. Legal review needed for cross-border data transfer to Replicate's region?
 
 ---
 

@@ -10,7 +10,7 @@ export function SubscribeButton() {
     setLoading(true);
     const res = await fetch("/api/checkout", {
       method: "POST",
-      body: JSON.stringify({ priceId: "your_stripe_price_id", clientReferenceId: user?.id }), // Pass Clerk user ID
+      body: JSON.stringify({ priceId: "price_1RKQcoI1h2u9PJ8qANPybT83", clientReferenceId: user?.id }), // Pass Clerk user ID
       headers: { "Content-Type": "application/json" },
     });
     const data = await res.json();

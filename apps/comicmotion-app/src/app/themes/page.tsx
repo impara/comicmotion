@@ -1,38 +1,105 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ThemeSelector } from '@/components/ThemeSelector'; // Assuming @ maps to src/
-import { useRouter } from 'next/navigation'; // Import useRouter
+import React, { useState, useEffect, Suspense } from 'react';
+import { ThemeSelector } from '@/components/ThemeSelector';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function ThemeSelectionPage() {
-  const router = useRouter(); // Initialize useRouter
-  
-  // Placeholder: In a real app, this would come from the previous step (e.g., state or query params)
-  const [avatarId, _setAvatarId] = useState<string>('avatar_placeholder_123'); 
+// Define the expected API response structure
+interface SceneGenerationResponse {
+  jobId: string;
+}
+
+function ThemeSelectionContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
+  const [avatarId, setAvatarId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get avatarId from URL query parameters on component mount
+  useEffect(() => {
+    const id = searchParams.get('avatarId');
+    if (id) {
+      setAvatarId(id);
+    } else {
+      console.error("Avatar ID is missing from URL parameters.");
+      setError("Avatar information missing. Cannot proceed.");
+    }
+  }, [searchParams]);
 
   const handleThemeSelected = (themeId: string) => {
-    console.log('Theme Selected:', themeId, 'for Avatar:', avatarId);
-    
-    if (!avatarId) {
-        console.error("Avatar ID is missing, cannot proceed.");
-        // Handle error appropriately, e.g., show a message or redirect
-        alert("Error: Avatar information missing. Cannot proceed.");
-        return;
+    setSelectedThemeId(themeId);
+    setError(null); // Clear previous errors on new selection
+    console.log('Theme Selected:', themeId);
+  };
+
+  const handleGenerateScene = async () => {
+    if (!selectedThemeId || !avatarId) {
+      setError("Please select a theme and ensure avatar information is available.");
+      return;
     }
-    
-    // Navigate to the next step (e.g., scene preview or generation trigger)
-    // Pass both avatarId and themeId as query parameters
-    router.push(`/scene-preview?avatarId=${encodeURIComponent(avatarId)}&theme=${encodeURIComponent(themeId)}`); 
-    
-    // Remove the alert now that we navigate
-    // alert(`Theme selected: ${themeId}. Ready for next step!`); 
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log(`Generating scene with Avatar ID: ${avatarId} and Theme: ${selectedThemeId}`);
+      const response = await fetch('/api/scene/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ avatarId, theme: selectedThemeId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to generate scene. Please try again.' }));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const result: SceneGenerationResponse = await response.json();
+      console.log('Scene generation started. Job ID:', result.jobId);
+
+      router.push(`/progress/${result.jobId}`);
+
+    } catch (err: unknown) {
+      console.error('Failed to start scene generation:', err);
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.';
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Optional: Add header/breadcrumbs if needed */}
       <ThemeSelector onThemeSelect={handleThemeSelected} />
-      {/* Optional: Add footer or other elements */}
+
+      {error && (
+        <p className="text-center text-red-600 mt-4">{error}</p>
+      )}
+
+      {selectedThemeId && avatarId && (
+        <div className="text-center mt-8">
+          <button 
+            onClick={handleGenerateScene} 
+            disabled={isLoading || !avatarId}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Generating...' : 'Generate Scene'}
+          </button>
+        </div>
+      )}
     </div>
   );
+}
+
+export default function ThemeSelectionPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center h-screen">Loading theme selection...</div>}>
+           <ThemeSelectionContent />
+        </Suspense>
+    );
 } 

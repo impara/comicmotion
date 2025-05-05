@@ -48,44 +48,35 @@ export function ThemeSelector({ onThemeSelect }: ThemeSelectorProps) {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <h2 className="text-2xl font-semibold text-center mb-6">Step 2: Choose Your Scene Theme</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="w-full max-w-5xl mx-auto px-2 sm:px-4">
+      <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-6 sm:mb-8">Step 2: Choose Your Scene Theme</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
         {THEMES.map((theme) => (
           <div
             key={theme.id}
             onClick={() => handleSelect(theme.id)}
             className={`
-              border rounded-lg p-4 cursor-pointer transition-all duration-200 
-              hover:shadow-lg hover:scale-105 
-              ${selectedTheme === theme.id ? 'border-blue-600 border-2 ring-2 ring-blue-300' : 'border-gray-300'}
+              group border rounded-lg p-3 sm:p-4 cursor-pointer transition-all duration-300 
+              hover:shadow-xl hover:scale-[1.03] hover:border-blue-400 
+              ${selectedTheme === theme.id 
+                ? 'border-blue-600 border-2 ring-2 ring-blue-300 ring-offset-1 shadow-lg scale-[1.02]'
+                : 'border-gray-300'}
             `}
           >
-            {/* Use Next.js Image component */}
-            <div className="relative w-full h-40 rounded-md mb-3 overflow-hidden">
+            <div className="relative w-full h-48 sm:h-56 rounded-md mb-3 overflow-hidden">
               <Image 
                 src={theme.thumbnailSrc}
                 alt={`${theme.name} Theme Thumbnail`}
-                layout="fill" // Fill the container div
-                objectFit="cover" // Cover the area, cropping if needed
-                className="transition-transform duration-300 group-hover:scale-110" // Example hover effect
+                layout="fill"
+                objectFit="cover"
+                className="transition-transform duration-300 group-hover:scale-110"
               />
             </div>
-            {/* <div className={`w-full h-40 rounded-md mb-3 ${theme.thumbnailPlaceholder} flex items-center justify-center text-white font-bold`}>
-              {theme.name} (Placeholder)
-            </div> */}
             <h3 className="text-lg font-semibold mb-1 text-center">{theme.name}</h3>
-            <p className="text-sm text-gray-600 text-center">{theme.description}</p>
+            <p className="text-sm text-gray-600 text-center px-1">{theme.description}</p>
           </div>
         ))}
       </div>
-
-      {selectedTheme && (
-        <div className="text-center mt-6">
-          <p className="text-lg">Selected Theme: <span className="font-semibold">{THEMES.find(t => t.id === selectedTheme)?.name}</span></p>
-          {/* Add a 'Next' button or similar here eventually */}
-        </div>
-      )}
     </div>
   );
 } 

@@ -22,18 +22,33 @@ interface GenerateApiResponse {
 }
 
 export async function POST(request: Request): Promise<NextResponse<GenerateApiResponse | { error: string }>> {
-  // Re-enable auth check and await it
-  const { userId: clerkId } = await auth();
+  const { userId: clerkId } = await auth(); // Renamed to clerkId for clarity
   if (!clerkId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   
-  // TODO: Get internal userId from clerkId - Requires DB lookup or Clerk session token customization
-  // For now, we MUST have a reliable way to link Clerk ID to DB ID. Using clerkId as placeholder DB ID for now.
-  const userId = clerkId; // Using clerkId as placeholder DB ID - CHANGE THIS LATER
-  if (!userId) { // Double check after potential lookup
-      return NextResponse.json({ error: 'User ID not found after authentication.'}, { status: 403 });
+  // --- Look up internal database user ID from Clerk ID ---
+  let dbUser;
+  try {
+    dbUser = await prisma.user.findUnique({
+      where: { clerkId: clerkId }, // Find user by their Clerk ID
+      select: { id: true }, // Only select the internal database ID
+    });
+
+    if (!dbUser) {
+        // This case should ideally be handled by webhooks creating the user on signup.
+        // If no webhook, you might choose to create the user here, but it's less robust.
+        console.error(`User not found in DB for Clerk ID: ${clerkId}. Ensure user sync (e.g., webhooks) is working.`);
+        return NextResponse.json({ error: 'User profile not found.'}, { status: 404 });
+    }
+  } catch (dbLookupError) {
+      console.error(`Database error looking up user for Clerk ID ${clerkId}:`, dbLookupError);
+      return NextResponse.json({ error: 'Failed to retrieve user profile.'}, { status: 500 });
   }
+
+  const internalUserId = dbUser.id; // Use the internal database ID
+  // --- End User ID Lookup ---
+
 
   try {
     const body = await request.json();
@@ -54,9 +69,9 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
 
     // --- NSFW Moderation Check --- 
     try {
-      console.log(`Checking image moderation for URL: ${originalUrl} (User: ${userId})`);
+      console.log(`Checking image moderation for URL: ${originalUrl} (ClerkID: ${clerkId})`);
       const moderationResponse = await openai.moderations.create({
-        input: originalUrl, // Use the direct image URL
+        input: originalUrl, 
       });
       const result = moderationResponse.results[0];
 
@@ -65,85 +80,75 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
                                         .filter(([, flagged]) => flagged)
                                         .map(([category]) => category)
                                         .join(', ');
-          console.warn(`Image flagged for moderation (${flaggedCategories}). URL: ${originalUrl}, UserId: ${userId}`);
+          console.warn(`Image flagged for moderation (${flaggedCategories}). URL: ${originalUrl}, ClerkID: ${clerkId}`);
           return NextResponse.json({ error: `Image violates content policy: ${flaggedCategories}` }, { status: 400 });
       }
       console.log(`Image passed moderation check. URL: ${originalUrl}`);
       // TODO: Optionally store moderation scores `result.category_scores` in the Image record later
 
     } catch (moderationError) {
-        console.error(`OpenAI Moderation API call failed for URL ${originalUrl} (User: ${userId}):`, moderationError);
-        // Decide if this should block generation or just log the error
-        // For now, let's block it to be safe.
+        console.error(`OpenAI Moderation API call failed for URL ${originalUrl} (ClerkID: ${clerkId}):`, moderationError);
         return NextResponse.json({ error: 'Failed to check image content policy.' }, { status: 500 });
     }
     // --- End Moderation Check --- 
 
     // --- Create Initial DB Records (Image and processing Avatar) ---
-    // We need the IDs to return to the client for polling
     let avatarRecordId: string;
-    let imageRecordId: string; // Need imageId for workflow args
+    let imageRecordId: string; 
 
     try {
         const initialRecord = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           const imgRec = await tx.image.create({
             data: {
-                userId: userId, // Use actual userId
+                userId: internalUserId, // <<< USE INTERNAL DB ID HERE
                 originalUrl: originalUrl,
                 fileName: filename || imageKey.split('/').pop(),
                 fileType: contentType,
-                fileSize: size, // Store the validated file size
-                // width: // TBD: Requires image processing to get dimensions
-                // height: // TBD: Requires image processing to get dimensions
+                fileSize: size, 
             }
           });
           const avatarRec = await tx.avatar.create({
             data: {
-                userId: userId, // Use actual userId
+                userId: internalUserId, // <<< USE INTERNAL DB ID HERE
                 imageId: imgRec.id,
-                status: 'queued', // Start as queued, generation happens elsewhere
-                // avatarUrl will be updated later by the background job
+                status: 'queued', 
             }
           });
           return { imageId: imgRec.id, avatarId: avatarRec.id };
         });
         avatarRecordId = initialRecord.avatarId;
-        imageRecordId = initialRecord.imageId; // Store imageId
-        console.log(`Created Image record: ${imageRecordId}, Avatar record: ${avatarRecordId} (status: queued) for User: ${userId}`);
+        imageRecordId = initialRecord.imageId; 
+        console.log(`Created Image record: ${imageRecordId}, Avatar record: ${avatarRecordId} (status: queued) for DB User ID: ${internalUserId} (ClerkID: ${clerkId})`);
     } catch (dbError) {
-        console.error(`Database transaction failed for User ${userId}:`, dbError);
-        // Check for specific Prisma errors if needed
+        console.error(`Database transaction failed for DB User ID ${internalUserId} (ClerkID: ${clerkId}):`, dbError);
         return NextResponse.json({ error: 'Failed to create initial generation records.' }, { status: 500 });
     }
 
 
     // --- Trigger Generation Asynchronously via Temporal --- 
     try {
-      // Get the Temporal client instance
       const temporalClient = await getTemporalClient(); 
       
-      console.log(`Initiating Temporal workflow for avatarId: ${avatarRecordId} (User: ${userId})`);
+      console.log(`Initiating Temporal workflow for avatarId: ${avatarRecordId} (DB User ID: ${internalUserId}, ClerkID: ${clerkId})`);
       
-      // Define workflow name and arguments (adjust names if needed)
       const workflowName = 'generateAvatarWorkflow'; 
       const taskQueueName = 'avatar-generation';
 
-      // Start the workflow
       await temporalClient.workflow.start(workflowName, { 
         taskQueue: taskQueueName, 
-        workflowId: `avatar-${avatarRecordId}`, // Use avatar ID for unique workflow ID
-        args: [{ // Pass necessary arguments to the workflow
+        workflowId: `avatar-${avatarRecordId}`, 
+        args: [{ 
             avatarId: avatarRecordId,
-            imageId: imageRecordId, // Pass the created imageId
-            userId: userId, // Use actual userId
+            imageId: imageRecordId, 
+            userId: internalUserId, // <<< PASS INTERNAL DB ID TO WORKFLOW
             originalImageUrl: originalUrl 
         }], 
       });
      
-     console.log(`Successfully started Temporal workflow '${workflowName}' with ID 'avatar-${avatarRecordId}' on task queue '${taskQueueName}' for User: ${userId}.`);
+     console.log(`Successfully started Temporal workflow '${workflowName}' with ID 'avatar-${avatarRecordId}' on task queue '${taskQueueName}' for DB User ID: ${internalUserId} (ClerkID: ${clerkId}).`);
 
     } catch (temporalError) {
-        console.error(`Failed to start Temporal workflow for avatarId ${avatarRecordId} (User: ${userId}):`, temporalError);
+        console.error(`Failed to start Temporal workflow for avatarId ${avatarRecordId} (DB User ID: ${internalUserId}, ClerkID: ${clerkId}):`, temporalError);
         // Compensation logic: Mark DB record as failed if workflow start fails
         try {
              await prisma.avatar.update({
@@ -153,9 +158,9 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
                      error: `Workflow initiation failed: ${temporalError instanceof Error ? temporalError.message : 'Unknown error'}`
                  }
              });
-             console.log(`Updated Avatar record ${avatarRecordId} status to 'failed' due to workflow start error (User: ${userId}).`);
+             console.log(`Updated Avatar record ${avatarRecordId} status to 'failed' due to workflow start error (ClerkID: ${clerkId}).`);
         } catch (dbUpdateError) {
-             console.error(`CRITICAL: Failed to update avatar ${avatarRecordId} status to failed after Temporal error (User: ${userId}):`, dbUpdateError);
+             console.error(`CRITICAL: Failed to update avatar ${avatarRecordId} status to failed after Temporal error (ClerkID: ${clerkId}):`, dbUpdateError);
              // Log this critical failure, manual intervention might be needed
         }
         // Return error response to the client
@@ -163,16 +168,11 @@ export async function POST(request: Request): Promise<NextResponse<GenerateApiRe
     }
 
     // --- Return the ID for polling --- 
-    // If workflow start was successful (or placeholder logging ran)
     return NextResponse.json({ avatarId: avatarRecordId });
 
   } catch (error) {
-    console.error(`Error in generate route for User ${userId}:`, error);
-    // Use const as message is not reassigned
+    console.error(`Error in generate route for Clerk ID ${clerkId}:`, error);
     const message = 'Failed to initiate avatar generation.';
-    // if (error instanceof Error) { // Keep this commented out - avoids exposing internal details
-    //   // message = `Failed to initiate avatar generation: ${error.message}`; 
-    // }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -35,42 +35,43 @@ export function getAvatarGenerationPrompt(options?: AvatarPromptOptions): string
 
 // --- Replicate Scene Generation --- //
 
-// TODO: Define prompts for different themes (city, fantasy, neon) - Subtask 6.2
-// Refined based on Subtask 5.4
+// Updated for openai/gpt-image-1 via Replicate (Task 6)
 export function getSceneGenerationPrompt(theme: string, avatarImageUrl: string): object {
-    // This needs to return the full input object for the Replicate model
-    // Placeholder - needs specific model input structure. Adjust based on the actual Replicate model used in Task 6.
-    let basePrompt = '';
-    let negativePrompt = 'text, words, letters, signature, watermark, deformed, blurry, low quality'; // Common negative prompt
+    let themeDescription = '';
 
+    // Generate theme-specific descriptions
     switch (theme.toLowerCase()) {
         case 'city':
-            basePrompt = "A dynamic comic book scene background of a bustling modern cityscape at daytime. Wide angle.";
+            themeDescription = "A dynamic comic book scene background of a bustling modern cityscape at daytime. Wide angle.";
             break;
         case 'fantasy':
-            basePrompt = "A vibrant comic book scene background of an epic fantasy landscape with mountains and castles. Wide angle.";
+            themeDescription = "A vibrant comic book scene background of an epic fantasy landscape with mountains and castles. Wide angle.";
             break;
         case 'neon':
-            basePrompt = "A comic book scene background of a futuristic neon-lit cyberpunk city street at night. Wide angle.";
+            themeDescription = "A comic book scene background of a futuristic neon-lit cyberpunk city street at night. Wide angle.";
             break;
         default:
-            console.warn(`Unknown theme: ${theme}. Using default prompt.`);
-            basePrompt = "A generic comic book style background scene.";
+            console.warn(`Unknown theme: ${theme}. Using default scene description.`);
+            themeDescription = "A generic comic book style background scene.";
     }
 
-    const fullPrompt = `${basePrompt} Featuring the character from the input image composited naturally into the scene. HD 1920x1080.`;
+    // Construct the final prompt for openai/gpt-image-1
+    // Instruct it to use the input image within the described scene
+    const fullPrompt = `Create a scene with the following background: "${themeDescription}". Incorporate the character from the input image naturally into this scene. Ensure the overall style remains consistent with the input character.`;
 
-    // Example input structure (adjust based on actual Replicate model, e.g., Stability AI SDXL)
-    // Consult the specific Replicate model documentation for exact parameters.
+    // Return the input object matching the structure for openai/gpt-image-1 via Replicate
+    // Derived from the cURL example and previous startAvatarGeneration update.
     return {
+        input_images: [avatarImageUrl], // Pass the generated avatar URL
         prompt: fullPrompt, 
-        negative_prompt: negativePrompt,
-        image: avatarImageUrl, // Assuming the model takes an input image for the character
-        width: 1920, // Required output size
-        height: 1080, // Required output size
-        num_inference_steps: 30, // Example parameter, adjust as needed
-        guidance_scale: 7.5,     // Example parameter, adjust as needed
-        // Add other necessary model parameters (e.g., scheduler, seed)
+        aspect_ratio: "1:1", // Use a valid aspect ratio for the model
+        number_of_images: 1,
+        output_format: "png", // Or "webp"
+        quality: "auto",
+        background: "auto",
+        moderation: "auto",
+        // Negative prompt isn't a direct parameter in the cURL example for this model
+        // It might need to be incorporated into the main prompt if needed.
     };
 }
 

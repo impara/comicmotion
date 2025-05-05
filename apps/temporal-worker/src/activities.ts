@@ -112,6 +112,7 @@ export async function generateAvatar(input: GenerateAvatarInput): Promise<Genera
     // 4. TODO: Decide if we need to download from Replicate and store in MinIO (like generateScene)
     // TSD 5.5 implies workers save generated assets. Let's assume yes for consistency.
     console.log(`[Activity:generateAvatar][${workflowId}] Downloading avatar from Replicate URL: ${replicateAvatarUrl}`);
+    Context.current().heartbeat('Downloading avatar from Replicate...'); // Heartbeat before download
     const response = await fetch(replicateAvatarUrl);
     if (!response.ok || !response.body) {
       throw new Error(`Failed to download avatar image from Replicate URL: ${response.statusText}`);
@@ -123,6 +124,7 @@ export async function generateAvatar(input: GenerateAvatarInput): Promise<Genera
     const avatarKey = `assets/${userId}/${avatarId}/avatar.${fileExtension}`; 
 
     console.log(`[Activity:generateAvatar][${workflowId}] Uploading avatar buffer to MinIO. Key: ${avatarKey}`);
+    Context.current().heartbeat('Uploading avatar to MinIO...'); // Heartbeat before upload
     await uploadStreamToS3(avatarKey, imageBuffer, contentType);
     console.log(`[Activity:generateAvatar][${workflowId}] Avatar uploaded successfully to MinIO.`);
 
@@ -269,6 +271,7 @@ export async function generateScene(input: GenerateSceneInput): Promise<Generate
 
     // 4. Download from Replicate URL and Upload to MinIO
     console.log(`[Activity:generateScene][${workflowId}] Downloading scene from Replicate URL: ${replicateSceneUrl}`);
+    Context.current().heartbeat('Downloading scene from Replicate...'); // Heartbeat before download
     const response = await fetch(replicateSceneUrl);
     if (!response.ok || !response.body) {
         throw new Error(`Failed to download scene image from Replicate URL: ${response.statusText}`);
@@ -282,6 +285,7 @@ export async function generateScene(input: GenerateSceneInput): Promise<Generate
     const sceneKey = `assets/${userId}/${sceneRecord.id}/scene.${fileExtension}`;
 
     console.log(`[Activity:generateScene][${workflowId}] Uploading scene buffer to MinIO. Key: ${sceneKey}`);
+    Context.current().heartbeat('Uploading scene to MinIO...'); // Heartbeat before upload
     // Pass the Buffer to the upload function
     await uploadStreamToS3(sceneKey, imageBuffer, contentType); 
     console.log(`[Activity:generateScene][${workflowId}] Scene uploaded successfully to MinIO.`);
@@ -487,6 +491,7 @@ export async function generateAnimation(input: GenerateAnimationInput): Promise<
     // 4. Download from Replicate URL and Upload to MinIO
     // TODO: Implement transcoding here if needed (Subtask 7.4)
     console.log(`[Activity:generateAnimation][${workflowId}] Downloading animation from Replicate URL: ${replicateAnimationUrl}`);
+    Context.current().heartbeat('Downloading animation from Replicate...'); // Heartbeat before download
     const response = await fetch(replicateAnimationUrl);
     if (!response.ok || !response.body) {
         throw new Error(`Failed to download animation video from Replicate URL: ${response.statusText}`);
@@ -499,6 +504,7 @@ export async function generateAnimation(input: GenerateAnimationInput): Promise<
     const animationKey = `assets/${userId}/${placeholderAnimationId}/animation.${fileExtension}`; // Use placeholder ID
 
     console.log(`[Activity:generateAnimation][${workflowId}] Uploading animation buffer to MinIO. Key: ${animationKey}`);
+    Context.current().heartbeat('Uploading animation to MinIO...'); // Heartbeat before upload
     await uploadStreamToS3(animationKey, videoBuffer, contentType); 
     console.log(`[Activity:generateAnimation][${workflowId}] Animation uploaded successfully to MinIO.`);
 

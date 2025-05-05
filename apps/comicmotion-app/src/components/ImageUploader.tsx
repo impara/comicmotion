@@ -3,6 +3,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone, FileRejection, Accept } from 'react-dropzone';
 import { useQuery } from '@tanstack/react-query'; // Import useQuery
+import { Loader2 } from 'lucide-react';
+
+// Define the API response type from /api/avatar/generate
+interface GenerateApiResponse {
+  avatarId: string;
+  // Add other fields if returned by the API
+}
 
 // Interface for the job status API response
 interface JobStatus {
@@ -20,12 +27,20 @@ const MAX_FILE_SIZE_MB = 8;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 interface ImageUploaderProps {
-  onUploadComplete: (uploadInfo: { key: string; previewUrl: string; filename: string; contentType: string; size: number; originalUrl: string }) => void;
+  onUploadComplete: (uploadInfo: { 
+      key: string; 
+      previewUrl: string; 
+      filename: string; 
+      contentType: string; 
+      size: number; 
+      originalUrl: string; 
+      avatarId: string;
+  }) => void;
   onUploadError: (error: string) => void;
   // Callback when avatar generation *starts* successfully (job ID received)
-  onAvatarGenerationStart?: (avatarJobId: string) => void;
+  // onAvatarGenerationStart?: (avatarJobId: string) => void;
   // Callback when avatar generation *finishes* (completed or failed)
-  onAvatarGenerationComplete?: (result: { success: boolean; avatarId: string; avatarUrl?: string | null; error?: string | null }) => void;
+  // onAvatarGenerationComplete?: (result: { success: boolean; avatarId: string; avatarUrl?: string | null; error?: string | null }) => void;
 }
 
 const MINIO_ENDPOINT = process.env.NEXT_PUBLIC_S3_ENDPOINT_URL;
@@ -33,20 +48,22 @@ const BUCKET_NAME = process.env.NEXT_PUBLIC_S3_BUCKET_NAME;
 
 export function ImageUploader({ 
     onUploadComplete, 
-    onUploadError, 
-    onAvatarGenerationStart, // Added prop
-    onAvatarGenerationComplete // Added prop
+    onUploadError 
+    // Remove unused props
+    // onAvatarGenerationStart,
+    // onAvatarGenerationComplete
 }: ImageUploaderProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  // const [isGenerating, setIsGenerating] = useState(false); // Remove this, use polling status
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [avatarJobId, setAvatarJobId] = useState<string | null>(null); // Store the Job ID
+  const [avatarJobId, setAvatarJobId] = useState<string | null>(null); // Store the Avatar ID (which is the Job ID for polling)
+  // State to hold upload details temporarily until generation completes
+  const [pendingUploadInfo, setPendingUploadInfo] = useState<Omit<Parameters<ImageUploaderProps['onUploadComplete']>[0], 'avatarId'> | null>(null);
 
   // --- Polling Logic using React Query ---
-  const { data: jobStatus, isLoading: isPolling } = useQuery<JobStatus, Error>({
-    queryKey: ['avatarStatus', avatarJobId], // Query key includes the job ID
+  const { data: jobStatus, error: pollingError, isLoading: isPolling } = useQuery<JobStatus, Error>({
+    queryKey: ['avatarStatus', avatarJobId], 
     queryFn: async () => {
       if (!avatarJobId) throw new Error('No job ID to poll');
       const response = await fetch(`/api/job/${avatarJobId}`);
@@ -56,7 +73,7 @@ export function ImageUploader({
       }
       return response.json();
     },
-    enabled: !!avatarJobId, // Only run the query if avatarJobId is set
+    enabled: !!avatarJobId, 
     refetchInterval: (query) => {
       // Stop polling if the job is completed or failed
       const status = query.state.data?.status;
@@ -75,22 +92,34 @@ export function ImageUploader({
 
   // --- Effect to handle polling completion --- 
   useEffect(() => {
-    if (jobStatus?.status === 'completed' || jobStatus?.status === 'failed') {
-      if (avatarJobId) { // Ensure we have the job ID
-         onAvatarGenerationComplete?.({
-           success: jobStatus.status === 'completed',
-           avatarId: avatarJobId,
-           avatarUrl: jobStatus.avatarUrl,
-           error: jobStatus.error
-         });
-      }
-      setAvatarJobId(null); // Stop polling by clearing the job ID
+    // Check if polling finished successfully
+    if (jobStatus?.status === 'completed' && avatarJobId && pendingUploadInfo) {
+        console.log('Avatar generation completed via polling. Triggering navigation.');
+        onUploadComplete({ 
+            ...pendingUploadInfo, // Spread the stored upload info
+            avatarId: avatarJobId // Add the confirmed avatarId
+        });
+        setAvatarJobId(null); // Stop polling
+        setPendingUploadInfo(null); // Clear temp state
     }
-    // Handle polling errors displayed to user
-    if (jobStatus?.error && jobStatus?.status === 'failed') {
-        setErrorMessage(`Generation failed: ${jobStatus.error}`);
+    // Check if polling finished with failure
+    else if (jobStatus?.status === 'failed' && avatarJobId) {
+      console.error('Avatar generation failed via polling:', jobStatus.error);
+      const errorMsg = `Avatar generation failed: ${jobStatus.error || 'Unknown reason'}`;
+      setErrorMessage(errorMsg); 
+      onUploadError(errorMsg);
+      setAvatarJobId(null); // Stop polling
+      setPendingUploadInfo(null); // Clear temp state
     }
-  }, [jobStatus, avatarJobId, onAvatarGenerationComplete]);
+    // Handle query fetch errors
+    else if (pollingError) {
+       console.error('Polling query error:', pollingError);
+       // Display a generic error, as polling will retry based on query config
+       setErrorMessage(`Error checking status: ${pollingError.message}`);
+       // Consider if we should call onUploadError here or let retry handle it
+    } 
+
+  }, [jobStatus, pollingError, avatarJobId, pendingUploadInfo, onUploadComplete, onUploadError]);
 
 
   const onDrop = useCallback((acceptedFiles: File[], fileRejections: FileRejection[]) => {
@@ -137,13 +166,16 @@ export function ImageUploader({
     if (!selectedFile || !preview) return;
 
     setIsUploading(true);
-    // setIsGenerating(false); // Removed
-    setAvatarJobId(null); // Reset job ID
+    setAvatarJobId(null); 
+    setPendingUploadInfo(null); // Clear previous pending info
     setErrorMessage(null);
 
     let uploadKey = '';
+    let originalUrl = ''; 
+    let avatarId = ''; 
 
     try {
+      // Step 1: Upload (same as before)
       console.log('Requesting pre-signed URL...');
       const presignResponse = await fetch('/api/upload', {
         method: 'POST',
@@ -195,26 +227,23 @@ export function ImageUploader({
         throw new Error(errorMsg);
       }
       console.log('File uploaded successfully!');
-      setIsUploading(false);
 
-      if (!MINIO_ENDPOINT || !BUCKET_NAME) {
-        console.warn("MinIO endpoint/bucket env vars not set, cannot construct original URL");
-        throw new Error("MinIO configuration missing in environment.");
-      }
-      const originalUrl = `${MINIO_ENDPOINT}/${BUCKET_NAME}/${uploadKey}`;
+      // <<< Construct the actual MinIO URL HERE >>>
+      originalUrl = `${MINIO_ENDPOINT}/${BUCKET_NAME}/${uploadKey}`;
+      console.log('Constructed originalUrl:', originalUrl);
 
-      // Notify parent that upload is complete (BEFORE starting generation)
-      onUploadComplete({ 
+      // Store upload info temporarily (can use the constructed URL now)
+      const tempUploadInfo = { 
           key: uploadKey, 
           previewUrl: preview, 
           filename: selectedFile.name, 
           contentType: selectedFile.type, 
           size: selectedFile.size,
-          originalUrl: originalUrl
-      });
+          originalUrl: originalUrl 
+      };
 
-      console.log('Triggering avatar generation...');
-      // setIsGenerating(true); // Removed
+      // Step 2: Call Generate API (Now with correct originalUrl)
+      console.log('Triggering avatar generation API...');
       const generateResponse = await fetch('/api/avatar/generate', {
         method: 'POST',
         headers: {
@@ -222,7 +251,7 @@ export function ImageUploader({
         },
         body: JSON.stringify({
             imageKey: uploadKey,
-            originalUrl: originalUrl,
+            originalUrl: originalUrl, 
             filename: selectedFile.name,
             contentType: selectedFile.type,
             size: selectedFile.size,
@@ -240,12 +269,18 @@ export function ImageUploader({
         }
         throw new Error(errorMsg);
       }
+      
+      // Get avatarId from the response
+      const generateResult: GenerateApiResponse = await generateResponse.json();
+      avatarId = generateResult.avatarId; 
+      console.log('Avatar generation API call successful, Avatar ID:', avatarId);
+      setIsUploading(false); // Now API call is done, uploading phase is over
 
-      // Start polling by setting the job ID
-      const { avatarId } = await generateResponse.json();
-      console.log('Avatar generation job started, polling ID:', avatarId);
-      setAvatarJobId(avatarId);
-      onAvatarGenerationStart?.(avatarId); // Notify parent generation started
+      // Step 3: Store Info and Start Polling (NO Navigation Yet)
+      setPendingUploadInfo(tempUploadInfo); // Store info needed for later navigation
+      setAvatarJobId(avatarId); // Start polling by setting the ID
+      console.log('Polling started for Avatar ID:', avatarId);
+      // Do NOT call onUploadComplete here anymore
 
     } catch (error: unknown) {
       let message = 'An unexpected error occurred.';
@@ -264,25 +299,44 @@ export function ImageUploader({
       // Ensure we stop any potential residual states
       setIsUploading(false);
       setAvatarJobId(null); // Ensure polling stops if initiation failed
+      setPendingUploadInfo(null);
     }
-    // Don't set isUploading false here, let the polling status dictate UI state
   };
 
-  // Determine button state and text based on polling status
-  const isGenerating = !!avatarJobId && (jobStatus?.status === 'queued' || jobStatus?.status === 'processing' || isPolling);
+  // Determine button state and text based on upload/polling status
+  const isGenerating = !!avatarJobId; // Generation phase starts when polling starts
+  const pollingStatus = jobStatus?.status;
   let buttonText = 'Upload & Generate';
-  if (isUploading) buttonText = 'Uploading...';
-  else if (isGenerating) buttonText = `Generating Avatar (${jobStatus?.status || 'starting'})...`;
-  else if (jobStatus?.status === 'completed') buttonText = 'Generation Complete!';
-  else if (jobStatus?.status === 'failed') buttonText = 'Generation Failed';
+  let buttonDisabled = !selectedFile; // Initial disable state
+
+  if (isUploading) {
+      buttonText = 'Uploading...';
+      buttonDisabled = true;
+  } else if (isGenerating) {
+      buttonDisabled = true; // Disable while generating
+      if (pollingStatus === 'processing' || pollingStatus === 'queued' || isPolling) {
+          buttonText = `Generating Avatar...`;
+      } else if (pollingStatus === 'completed') {
+          // This state is brief as useEffect triggers navigation
+          buttonText = 'Generation Complete!'; 
+      } else if (pollingStatus === 'failed') {
+          buttonText = 'Generation Failed'; 
+          buttonDisabled = false; // Allow retry/new upload after failure
+      } else {
+           buttonText = 'Starting Generation...'; // Initial state after API call
+      }
+  } else if (errorMessage) {
+       // If there was an error before polling started (e.g., upload failed)
+       buttonDisabled = false; // Allow retry/new upload
+  }
 
   return (
     <div className="flex flex-col items-center space-y-4 p-4 border border-dashed border-gray-400 rounded-lg">
       <div
         {...getRootProps()}
-        className={`w-full p-10 border-2 border-dashed rounded-lg text-center cursor-pointer ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
+        className={`w-full p-10 border-2 border-dashed rounded-lg text-center cursor-pointer ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'} ${isUploading || isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
-        <input {...getInputProps({})} />
+        <input {...getInputProps({ disabled: isUploading || isGenerating })} />
         {isDragActive ? (
           <p className="text-blue-600">Drop the selfie here ...</p>
         ) : (
@@ -290,31 +344,36 @@ export function ImageUploader({
         )}
       </div>
 
-      {/* Display detailed status during generation if needed */}
-      {isGenerating && jobStatus?.status && (
-          <p className="text-blue-500 text-sm">Status: {jobStatus.status}</p>
-      )}
+      {/* Display generation status more prominently */}
+      {isGenerating && (
+             <div className="text-center p-2 bg-blue-100 border border-blue-300 rounded-md w-full">
+                <p className="text-blue-700 font-medium text-sm flex items-center justify-center">
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> 
+                    Generating Avatar{pollingStatus ? ` (${pollingStatus})` : '...'} 
+                </p>
+             </div>
+        )}
+        
+        {errorMessage && (
+            <p className="text-red-500 text-sm mt-2">{errorMessage}</p>
+        )}
 
-      {errorMessage && (
-        <p className="text-red-500 text-sm">{errorMessage}</p>
-      )}
+        {preview && (
+          <div className="mt-4 flex flex-col items-center">
+            <h4 className="text-lg font-semibold mb-2">Preview:</h4>
+            <img src={preview} alt="Selected preview" className="max-w-xs max-h-48 object-contain rounded" />
+          </div>
+        )}
 
-      {preview && (
-        <div className="mt-4 flex flex-col items-center">
-          <h4 className="text-lg font-semibold mb-2">Preview:</h4>
-          <img src={preview} alt="Selected preview" className="max-w-xs max-h-48 object-contain rounded" />
-        </div>
-      )}
-
-      {selectedFile && (
-        <button
-          onClick={handleUploadAndGenerate}
-          disabled={isUploading || isGenerating}
-          className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
-        >
-          {buttonText}
-        </button>
-      )}
+        {selectedFile && (
+          <button
+            onClick={handleUploadAndGenerate}
+            disabled={buttonDisabled}
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+          >
+            {buttonText}
+          </button>
+        )}
     </div>
   );
 } 

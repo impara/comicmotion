@@ -11,11 +11,11 @@ Implement a WebSocket-based progress tracking system that provides real-time upd
 Test real-time progress updates through the entire generation pipeline. Verify WebSocket connections are established and maintained. Test ETA calculations for accuracy. Verify proper display of progress states and error conditions. Test recovery options when errors occur.
 
 # Subtasks:
-## 8.1. Design and implement real-time progress UI component [in-progress]
+## 8.1. Design and implement real-time progress UI component [completed]
 ### Dependencies: None
 ### Description: Create a responsive UI component that shows the current generation step, progress percentage, and estimated time remaining
 ### Details:
-Follow the card-based step design from the PRD (Progress: 1 ▶ 2 ▶ 3). Implement state transitions and animations between steps. Include visual indicators for completed, current, and pending steps. CURRENT STATUS: Basic page structure created at /progress/[jobId]. Reads jobId, displays step indicators, and shows simulated status updates. Uses icons for different states.
+Follow the card-based step design from the PRD (Progress: 1 ▶ 2 ▶ 3). Implement state transitions and animations between steps. Include visual indicators for completed, current, and pending steps. CURRENT STATUS: Basic page structure created at /progress/[jobId]. Reads jobId, displays step indicators, and shows simulated status updates. Uses icons for different states. Progress page UI now driven by real data polled from backend status API, replacing mock simulation. Implemented Temporal query handler in workflow and updated status API to provide specific stage (scene vs. animation). Frontend polling now uses this stage for more accurate progress bar display.
 
 ## 8.2. Implement WebSocket client integration [pending]
 ### Dependencies: None
@@ -45,11 +45,17 @@ Design skeleton loaders that match the final content layout. Implement smooth tr
 ### Dependencies: None
 ### Description: Create robust error handling with user-friendly recovery options
 ### Details:
-Implement error state UI with clear error messages. Provide retry options for failed steps. Create a system to resume generation from the last successful step when possible. CURRENT STATUS: Basic error display implemented based on simulated errors. Retry button placeholder added.
+Implement error state UI with clear error messages. Provide retry options for failed steps. Create a system to resume generation from the last successful step when possible. CURRENT STATUS: Basic error display implemented based on simulated errors. Retry button placeholder added. Progress page now handles basic error states (workflow failed, API errors) based on polled backend status.
 
 ## 8.7. Create WebSocket server endpoint for progress updates [pending]
 ### Dependencies: None
 ### Description: Implement server-side WebSocket endpoint to broadcast progress updates to clients
 ### Details:
 Set up WebSocket server with authentication and connection management. Implement message queue for progress updates. Ensure scalability for multiple concurrent clients.
+
+## 8.8. Integrate with Temporal query handler for detailed progress tracking [pending]
+### Dependencies: None
+### Description: Leverage the implemented Temporal query handler to enhance progress tracking granularity
+### Details:
+Build upon the Temporal query handler implementation to further enhance progress tracking. Ensure the WebSocket implementation can utilize the stage-specific information (scene vs. animation) provided by the status API. Implement additional UI refinements to take advantage of the more granular progress information.
 

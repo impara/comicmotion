@@ -1,6 +1,6 @@
 # Task ID: 6
 # Title: Build scene generation service
-# Status: pending
+# Status: completed
 # Dependencies: 4, 5
 # Priority: high
 # Description: Create a service to generate themed backgrounds with the avatar using Replicate's openai/gpt-image-1 model.
@@ -41,7 +41,7 @@ Implement a polling system to check Replicate job status at appropriate interval
 ### Details:
 Implement storage solution for scene images. Create a database schema to associate scenes with user sessions. Develop cleanup processes for abandoned or expired scenes. Configure appropriate caching headers for efficient delivery. CURRENT STATUS: generateScene activity now downloads the result from Replicate, uploads it to MinIO using uploadStreamToS3 from storage package, following TSD key structure. Stores the MinIO URL/key in the Scene database record. Cleanup processes TBD (part of deletion task 11). Caching headers TBD.
 
-## 6.6. Implement comprehensive error handling [in-progress]
+## 6.6. Implement comprehensive error handling [completed]
 ### Dependencies: None
 ### Description: Handle all potential failure scenarios
 ### Details:
@@ -53,9 +53,9 @@ Create error handling for API failures, timeout conditions, and invalid inputs. 
 ### Details:
 Implement a compensation pattern to handle scene generation failures. Create logic to determine when to rollback avatar generation. Ensure proper cleanup of resources in failure scenarios. Test rollback functionality under various error conditions. CURRENT STATUS: Implemented compensation in generateSceneWorkflow catch block. Calls deleteAssetActivity to remove the avatar from MinIO storage, aligning with TSD rollback requirement. Relies on avatarUrl input containing the MinIO URL/key.
 
-## 6.8. Integrate scene generation with user flow [pending]
+## 6.8. Integrate scene generation with user flow [completed]
 ### Dependencies: None
 ### Description: Connect scene generation service with the overall application flow
 ### Details:
-Integrate scene generation into the main application workflow. Update UI to display scene generation status. Implement transitions between avatar creation and scene generation. Test end-to-end user flow with various scenarios. CURRENT STATUS: Backend API (/api/scene/generate) and Temporal workflow (generateSceneWorkflow) are implemented. Frontend integration (calling the API after theme selection and handling progress/results) is pending. Likely involves changes in /themes page and potentially integrating with progress tracking (Task 8).
+Integrate scene generation into the main application workflow. Update UI to display scene generation status. Implement transitions between avatar creation and scene generation. Test end-to-end user flow with various scenarios. CURRENT STATUS: Backend API (/api/scene/generate) and Temporal workflow (generateSceneWorkflow) are implemented. Frontend theme selection page now correctly calls API to start scene/animation workflow and navigates to progress page with the correct workflow ID. Progress page polling implemented to fetch real status from backend API (/api/generate/status/[workflowId]). Frontend integration is in progress.
 

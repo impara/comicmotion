@@ -13,7 +13,8 @@ export interface GenerateAvatarWorkflowInput {
 
 // Define common activity options for easier reuse
 const defaultActivityOptions: wf.ActivityOptions = {
-  startToCloseTimeout: '1 minute', 
+  // Increase timeout significantly to allow for polling, download, upload
+  startToCloseTimeout: '10 minutes', 
   retry: {
      initialInterval: '1 second',
      backoffCoefficient: 2,
@@ -22,7 +23,8 @@ const defaultActivityOptions: wf.ActivityOptions = {
      // Consider making Error non-retryable for specific activities if needed
      // nonRetryableErrorTypes: ['Error'], 
   },
-  heartbeatTimeout: '1 minute', // Keep heartbeat for potentially long activities
+  // Heartbeat remains important for long polls
+  heartbeatTimeout: '1 minute', 
 };
 
 // Get activity functions callable from the workflow
@@ -103,39 +105,56 @@ export interface GenerateSceneWorkflowOutput {
     finalVideoUrl?: string; // If animation completes here
 }
 
+// Define possible stages for the scene/animation workflow
+type SceneWorkflowStage = 
+  | 'QUEUED' 
+  | 'GENERATING_SCENE' 
+  | 'GENERATING_ANIMATION' 
+  | 'COMPLETED' 
+  | 'FAILED';
+
 export async function generateSceneWorkflow(input: GenerateSceneWorkflowInput): Promise<GenerateSceneWorkflowOutput> {
-  const { avatarId, userId, theme, avatarUrl, durationSeconds } = input; // Include durationSeconds
+  const { avatarId, userId, theme, avatarUrl, durationSeconds } = input; 
   const workflowId = wf.workflowInfo().workflowId;
   wf.log.info(`[Workflow:${workflowId}] Started Scene & Animation Generation. AvatarId: ${avatarId}, Theme: ${theme}, Duration: ${durationSeconds || 'default'}`);
 
+  // --- Add state variable and query handler --- 
+  let currentStage: SceneWorkflowStage = 'QUEUED'; 
+
+  wf.setHandler(wf.defineQuery<SceneWorkflowStage>('getCurrentStage'), () => {
+    return currentStage;
+  });
+  // --- End state variable and query handler ---
+
   let generatedSceneUrl = '';
-  let sceneDbId = ''; // Placeholder ID
+  let sceneDbId = ''; 
   let finalVideoUrl: string | undefined = undefined;
 
   try {
     // 1. Call the scene generation activity
+    currentStage = 'GENERATING_SCENE'; // Update stage
     wf.log.info(`[Workflow:${workflowId}] Calling generateScene activity...`);
     const sceneActivityInput: activities.GenerateSceneInput = { avatarId, userId, avatarUrl, theme };
     const sceneResult = await generateScene(sceneActivityInput);
     generatedSceneUrl = sceneResult.sceneUrl;
-    sceneDbId = `scene_for_${avatarId}`; // Still using placeholder ID
+    sceneDbId = `scene_for_${avatarId}`; 
     wf.log.info(`[Workflow:${workflowId}] Activity generateScene completed. Scene URL: ${generatedSceneUrl}`);
 
-    // 2. Call the animation generation activity (which now handles polling and storage)
+    // 2. Call the animation generation activity 
+    currentStage = 'GENERATING_ANIMATION'; // Update stage
     wf.log.info(`[Workflow:${workflowId}] Calling generateAnimation activity...`);
     const animationActivityInput: activities.GenerateAnimationInput = {
         sceneId: sceneDbId, 
         sceneUrl: generatedSceneUrl, 
         userId: userId,
-        durationSeconds: durationSeconds // Pass duration
+        durationSeconds: durationSeconds 
     };
     const animationResult = await generateAnimation(animationActivityInput);
     finalVideoUrl = animationResult.finalAnimationUrl;
     wf.log.info(`[Workflow:${workflowId}] Activity generateAnimation completed. Final Video URL: ${finalVideoUrl}`);
 
-    // 3. Polling is now handled within generateAnimation activity
-    // --- Placeholder logic removed --- 
-
+    // 3. Mark as completed
+    currentStage = 'COMPLETED'; // Update stage
     wf.log.info(`[Workflow:${workflowId}] Workflow Completed Successfully. Scene: ${generatedSceneUrl}, Video: ${finalVideoUrl}`);
     return { 
         sceneUrl: generatedSceneUrl, 
@@ -143,12 +162,11 @@ export async function generateSceneWorkflow(input: GenerateSceneWorkflowInput): 
     };
 
   } catch (error) {
+    currentStage = 'FAILED'; // Update stage on error
     const errorMessage = error instanceof Error ? error.message : 'Unknown workflow error';
     wf.log.error(`[Workflow:${workflowId}] Scene/Animation Generation Failed: ${errorMessage}`, error instanceof Error ? { error: error.stack } : { error });
 
     // --- Compensation Logic --- 
-    // Activities attempt to mark their DB records as failed.
-    // Workflow attempts to delete assets.
     wf.log.warn(`[Workflow:${workflowId}] Generation failed. Attempting to delete assets as compensation.`);
     
     // Attempt to delete the final video asset if its URL was generated *before* the error

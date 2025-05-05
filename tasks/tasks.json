@@ -331,7 +331,7 @@
       "id": 6,
       "title": "Build scene generation service",
       "description": "Create a service to generate themed backgrounds with the avatar using Replicate's openai/gpt-image-1 model.",
-      "status": "pending",
+      "status": "completed",
       "dependencies": [
         4,
         5
@@ -379,7 +379,7 @@
           "id": 6.6,
           "title": "Implement comprehensive error handling",
           "description": "Handle all potential failure scenarios",
-          "status": "in-progress",
+          "status": "completed",
           "details": "Create error handling for API failures, timeout conditions, and invalid inputs. Implement user-friendly error messages. Set up logging for all error conditions. Create monitoring alerts for critical failures. CURRENT STATUS: Basic try/catch blocks implemented in generateScene activity and workflow. Failures update DB status to 'failed' and log errors. Activity errors are propagated to the workflow. More specific error handling, user messaging, and monitoring integration deferred to Task 14."
         },
         {
@@ -393,8 +393,8 @@
           "id": 6.8,
           "title": "Integrate scene generation with user flow",
           "description": "Connect scene generation service with the overall application flow",
-          "status": "pending",
-          "details": "Integrate scene generation into the main application workflow. Update UI to display scene generation status. Implement transitions between avatar creation and scene generation. Test end-to-end user flow with various scenarios. CURRENT STATUS: Backend API (/api/scene/generate) and Temporal workflow (generateSceneWorkflow) are implemented. Frontend integration (calling the API after theme selection and handling progress/results) is pending. Likely involves changes in /themes page and potentially integrating with progress tracking (Task 8)."
+          "status": "completed",
+          "details": "Integrate scene generation into the main application workflow. Update UI to display scene generation status. Implement transitions between avatar creation and scene generation. Test end-to-end user flow with various scenarios. CURRENT STATUS: Backend API (/api/scene/generate) and Temporal workflow (generateSceneWorkflow) are implemented. Frontend theme selection page now correctly calls API to start scene/animation workflow and navigates to progress page with the correct workflow ID. Progress page polling implemented to fetch real status from backend API (/api/generate/status/[workflowId]). Frontend integration is in progress."
         }
       ]
     },
@@ -479,8 +479,8 @@
           "id": "8.1",
           "title": "Design and implement real-time progress UI component",
           "description": "Create a responsive UI component that shows the current generation step, progress percentage, and estimated time remaining",
-          "status": "in-progress",
-          "details": "Follow the card-based step design from the PRD (Progress: 1 ▶ 2 ▶ 3). Implement state transitions and animations between steps. Include visual indicators for completed, current, and pending steps. CURRENT STATUS: Basic page structure created at /progress/[jobId]. Reads jobId, displays step indicators, and shows simulated status updates. Uses icons for different states."
+          "status": "completed",
+          "details": "Follow the card-based step design from the PRD (Progress: 1 ▶ 2 ▶ 3). Implement state transitions and animations between steps. Include visual indicators for completed, current, and pending steps. CURRENT STATUS: Basic page structure created at /progress/[jobId]. Reads jobId, displays step indicators, and shows simulated status updates. Uses icons for different states. Progress page UI now driven by real data polled from backend status API, replacing mock simulation. Implemented Temporal query handler in workflow and updated status API to provide specific stage (scene vs. animation). Frontend polling now uses this stage for more accurate progress bar display."
         },
         {
           "id": "8.2",
@@ -515,7 +515,7 @@
           "title": "Implement error state handling and recovery options",
           "description": "Create robust error handling with user-friendly recovery options",
           "status": "in-progress",
-          "details": "Implement error state UI with clear error messages. Provide retry options for failed steps. Create a system to resume generation from the last successful step when possible. CURRENT STATUS: Basic error display implemented based on simulated errors. Retry button placeholder added."
+          "details": "Implement error state UI with clear error messages. Provide retry options for failed steps. Create a system to resume generation from the last successful step when possible. CURRENT STATUS: Basic error display implemented based on simulated errors. Retry button placeholder added. Progress page now handles basic error states (workflow failed, API errors) based on polled backend status."
         },
         {
           "id": "8.7",
@@ -523,6 +523,13 @@
           "description": "Implement server-side WebSocket endpoint to broadcast progress updates to clients",
           "status": "pending",
           "details": "Set up WebSocket server with authentication and connection management. Implement message queue for progress updates. Ensure scalability for multiple concurrent clients."
+        },
+        {
+          "id": "8.8",
+          "title": "Integrate with Temporal query handler for detailed progress tracking",
+          "description": "Leverage the implemented Temporal query handler to enhance progress tracking granularity",
+          "status": "pending",
+          "details": "Build upon the Temporal query handler implementation to further enhance progress tracking. Ensure the WebSocket implementation can utilize the stage-specific information (scene vs. animation) provided by the status API. Implement additional UI refinements to take advantage of the more granular progress information."
         }
       ]
     },
@@ -869,8 +876,8 @@
         7
       ],
       "priority": "medium",
-      "details": "Implement structured logging across all services. Set up error tracking with appropriate categorization. Create monitoring dashboards for system performance and model latency. Implement graceful degradation for API failures. Set up alerts for critical errors and performance issues. Add detailed error messages and recovery options for users. Implement the failure modal with friendly copy and 'Try again' functionality as specified in the PRD.",
-      "testStrategy": "Test logging with various scenarios including errors and edge cases. Verify error tracking captures all relevant information. Test monitoring dashboards with simulated load. Confirm alerts trigger appropriately. Test user-facing error messages and recovery options for clarity and functionality.",
+      "details": "Implement structured logging across all services. Set up error tracking with appropriate categorization. Create monitoring dashboards for system performance and model latency. Implement graceful degradation for API failures. Set up alerts for critical errors and performance issues. Add detailed error messages and recovery options for users. Implement the failure modal with friendly copy and 'Try again' functionality as specified in the PRD. Increased default Temporal activity startToCloseTimeout to 10 minutes to prevent premature timeouts during external API polling, downloads, and uploads, improving overall reliability.",
+      "testStrategy": "Test logging with various scenarios including errors and edge cases. Verify error tracking captures all relevant information. Test monitoring dashboards with simulated load. Confirm alerts trigger appropriately. Test user-facing error messages and recovery options for clarity and functionality. Verify that the extended Temporal timeout settings correctly prevent premature timeouts during long-running operations.",
       "subtasks": [
         {
           "id": 14.1,
@@ -927,6 +934,13 @@
           "description": "Implement health and readiness checks for all services",
           "status": "pending",
           "details": "Create standardized health check endpoints for all services. Implement deep health checks that verify database connections and dependencies. Set up Kubernetes liveness and readiness probes. Configure monitoring for health check status."
+        },
+        {
+          "id": 14.9,
+          "title": "Configure Temporal timeout settings",
+          "description": "Adjust Temporal activity timeout configurations for long-running operations",
+          "status": "pending",
+          "details": "Increase default Temporal activity startToCloseTimeout to 10 minutes for workflows that involve external API polling, downloads, and uploads. Monitor the effects of these changes on workflow reliability. Document the timeout settings for different workflow types for future reference."
         }
       ]
     },

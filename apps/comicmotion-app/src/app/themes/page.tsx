@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 // Define the expected API response structure
 interface SceneGenerationResponse {
-  jobId: string;
+  workflowId: string;
 }
 
 function ThemeSelectionContent() {
@@ -60,9 +60,15 @@ function ThemeSelectionContent() {
       }
 
       const result: SceneGenerationResponse = await response.json();
-      console.log('Scene generation started. Job ID:', result.jobId);
+      console.log('Scene generation started. Workflow ID:', result.workflowId);
 
-      router.push(`/progress/${result.jobId}`);
+      // Explicitly create the target URL string
+      const targetUrl = `/progress/${result.workflowId}`;
+
+      // Log the final URL *before* navigation
+      console.log(`DEBUG: Navigating to URL: ${targetUrl}`); 
+
+      router.push(targetUrl); // Use the pre-constructed string
 
     } catch (err: unknown) {
       console.error('Failed to start scene generation:', err);

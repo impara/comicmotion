@@ -1,128 +1,174 @@
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { CheckCircle, XCircle, Loader2, Download, Copy, Check } from 'lucide-react'; // Icons
 
-// Define possible job statuses based on TSD/PRD
+// Define possible job statuses based on TSD/PRD AND Workflow Stages
+// Include all states used in the mapping/display logic
 type JobStatus =
   | "queued"
-  | "generating_avatar"
-  | "avatar_done"
-  | "generating_scene"
-  | "scene_done"
-  | "generating_video"
-  | "video_done" // Final success state
-  | "failed";
+  | "generating_scene" 
+  | "generating_animation"
+  | "generating_video" // Alias or intermediate if needed? Use generating_animation for consistency.
+  | "avatar_done" // Needed for step logic
+  | "video_done" // Final success state mapped from COMPLETED
+  | "failed"; // Covers FAILED, TIMED_OUT etc.
 
-// Define the structure for progress updates (adjust as needed based on actual API)
-interface ProgressUpdate {
-  status: JobStatus;
-  message?: string;
-  progressPercent?: number; // Optional progress within a step
+// Redefine the API response structure locally
+// (Matches definition in /api/generate/status/[workflowId]/route.ts)
+interface WorkflowResult {
+  sceneUrl: string;
+  finalVideoUrl?: string;
+}
+interface StatusResponse {
+  workflowId: string;
+  status: string; // Overall Temporal status (RUNNING, COMPLETED, FAILED, etc.)
+  currentStage?: string; // Specific stage (QUEUED, GENERATING_SCENE, etc.)
+  result?: WorkflowResult; 
   error?: string;
-  resultUrl?: string; // URL to final video/image
-  etaSeconds?: number;
 }
 
-// Mock function to simulate progress updates (replace with actual WebSocket/polling)
-const MOCK_STEPS: JobStatus[] = [
-  'generating_avatar',
-  'avatar_done',
-  'generating_scene',
-  'scene_done',
-  'generating_video',
-  'video_done'
-];
+// Remove Mock Data/Config
+// const MOCK_STEPS: JobStatus[] = [...];
+// const MOCK_FAIL_AFTER_STEP = ...;
+// const MOCK_SHOULD_FAIL = ...;
+// const MOCK_DELAY_MS = ...;
 
-const MOCK_FAIL_AFTER_STEP = 'generating_video'; // Simulate failure
-const MOCK_SHOULD_FAIL = false; // Set to true to test failure
-const MOCK_DELAY_MS = 2500; // Delay between mock updates
+const POLLING_INTERVAL_MS = 3000; // Poll every 3 seconds
 
 function ProgressContent() {
   const params = useParams();
+  const router = useRouter(); // Add router
   const jobId = params.jobId as string;
 
   const [currentStatus, setCurrentStatus] = useState<JobStatus>('queued');
   const [error, setError] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
-  const [eta, setEta] = useState<number | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
 
-  // Simulate receiving progress updates
+  // --- Update Polling useEffect --- 
   useEffect(() => {
-    if (!jobId) return;
-    console.log(`Starting progress tracking for Job ID: ${jobId}`);
+    if (!jobId) {
+      console.error("Job ID is missing, cannot poll status.");
+      setError("Job ID is missing. Cannot track progress.");
+      return;
+    }
+
+    console.log(`Starting progress polling for Job ID: ${jobId}`);
     setError(null);
-    setCurrentStatus('queued');
+    setCurrentStatus('queued'); 
     setResultUrl(null);
-    setEta(null); 
 
-    let stepIndex = 0;
-    const intervalId = setInterval(() => {
-      const nextStatus = MOCK_STEPS[stepIndex];
-      
-      if (!nextStatus) {
-        clearInterval(intervalId);
-        return;
+    const intervalId = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/generate/status/${jobId}`);
+        
+        if (!response.ok) {
+          // Handle specific errors like 404 Not Found
+          if (response.status === 404) {
+             setError(`Job ${jobId} not found.`);
+             setCurrentStatus("failed"); // Treat as failed
+             clearInterval(intervalId); 
+             return;
+          }
+          // Handle other non-ok responses
+          const errorText = await response.text();
+          throw new Error(`API error! status: ${response.status} - ${errorText}`);
+        }
+
+        const data: StatusResponse = await response.json(); 
+        console.log("Polling Update:", data);
+
+        // --- Determine Frontend Status based on API response --- 
+        let newFrontendStatus: JobStatus = 'queued'; // Default
+        
+        if (data.status === 'COMPLETED') {
+            newFrontendStatus = 'video_done';
+            setResultUrl(data.result?.finalVideoUrl || null); 
+            setError(null);
+            clearInterval(intervalId); // Stop polling
+        } else if (['FAILED', 'TIMED_OUT', 'TERMINATED', 'CANCELED'].includes(data.status)) {
+            newFrontendStatus = 'failed';
+            setError(data.error || `Workflow ${data.status?.toLowerCase()}`);
+            setResultUrl(null);
+            clearInterval(intervalId); // Stop polling
+        } else if (data.status === 'RUNNING' && data.currentStage) {
+            // Map the stage from the query handler
+            switch (data.currentStage) {
+                case 'GENERATING_SCENE':
+                    newFrontendStatus = 'generating_scene';
+                    break;
+                case 'GENERATING_ANIMATION':
+                    newFrontendStatus = 'generating_animation';
+                    break;
+                // Add other stages if defined in workflow
+                default:
+                    // If stage is unknown or QUEUED while RUNNING, maybe default to first step
+                    newFrontendStatus = 'generating_scene'; 
+                    break;
+            }
+            setError(null); // Clear errors while running successfully
+        } else {
+            // Default or unknown running state, keep as queued or last known running state
+            // This case might occur if query fails or status is unexpected
+            newFrontendStatus = currentStatus === 'failed' ? 'failed' : 'queued';
+             if (currentStatus !== 'failed') {
+               // Avoid clearing error if it was a polling error
+               // setError(null); 
+             }
+        }
+        
+        setCurrentStatus(newFrontendStatus);
+        // --- End Status Determination --- 
+
+      } catch (err: unknown) {
+        console.error('Polling failed:', err);
+        const message = err instanceof Error ? err.message : 'Failed to fetch progress update.';
+        setError(`Error fetching status: ${message}. Retrying...`); 
       }
+    }, POLLING_INTERVAL_MS);
 
-      // Simulate failure if configured
-      if (MOCK_SHOULD_FAIL && nextStatus === MOCK_FAIL_AFTER_STEP) {
-        const update: ProgressUpdate = {
-          status: 'failed',
-          error: `Mock failure during step: ${nextStatus}`
-        };
-        console.log("Mock Update:", update);
-        setCurrentStatus(update.status);
-        setError(update.error || 'An unknown error occurred.');
-        clearInterval(intervalId);
-        return;
-      }
-      
-      // Simulate success update
-      const update: ProgressUpdate = {
-        status: nextStatus,
-        message: `Step ${stepIndex + 1} completed: ${nextStatus}`,
-        progressPercent: 100, // Assume step completion
-        resultUrl: nextStatus === 'video_done' ? `/mock-download/${jobId}.mp4` : undefined,
-        etaSeconds: MOCK_STEPS.length - (stepIndex + 1) > 0 ? (MOCK_STEPS.length - (stepIndex + 1)) * (MOCK_DELAY_MS / 1000) : 0
-      };
-      console.log("Mock Update:", update);
-      setCurrentStatus(update.status);
-      setResultUrl(update.resultUrl || null);
-      setEta(update.etaSeconds !== undefined ? update.etaSeconds : null);
-      setError(null); // Clear error on successful step
+    // Initial fetch immediately? Optional.
+    // fetchStatus(); 
 
-      if (nextStatus === 'video_done') {
-        clearInterval(intervalId);
-      }
-      
-      stepIndex++;
-
-    }, MOCK_DELAY_MS);
-
-    // Cleanup interval on unmount
+    // Cleanup interval on unmount or when jobId changes
     return () => clearInterval(intervalId);
 
-  }, [jobId]); // Rerun simulation if jobId changes
+  }, [jobId]); 
+
+  // --- Keep STEPS_CONFIG and UI Rendering Logic ---
+  // Note: The getCurrentStepIndex logic needs careful review and adjustment 
+  //       to correctly reflect the state based on the *new* currentStatus updates.
 
   const STEPS_CONFIG: { id: JobStatus, label: string }[] = [
-    { id: 'generating_avatar', label: 'Generating Avatar' },
+    // Assuming Avatar is done *before* this workflow starts. Adjust if not.
+    // { id: 'generating_avatar', label: 'Generating Avatar' }, 
     { id: 'generating_scene', label: 'Creating Scene' },
     { id: 'generating_video', label: 'Animating Video' },
     { id: 'video_done', label: 'Complete' }
   ];
 
+  // --- Refine getCurrentStepIndex based on the new accurate status ---
   const getCurrentStepIndex = () => {
-    const currentMajorStep = MOCK_STEPS.find(step => currentStatus === step || currentStatus.startsWith(step.split('_')[0]));
-    if (!currentMajorStep) return -1;
-
-    if (currentStatus === 'failed') return STEPS_CONFIG.findIndex(s => s.id === MOCK_FAIL_AFTER_STEP || s.id.startsWith(MOCK_FAIL_AFTER_STEP.split('_')[0]));
-    if (currentStatus === 'video_done') return STEPS_CONFIG.length -1; // Point to 'Complete'
-
-    return STEPS_CONFIG.findIndex(s => s.id === currentMajorStep || s.id.startsWith(currentMajorStep.split('_')[0]));
-};
+      switch (currentStatus) {
+          // case 'generating_avatar': return 0; // If Avatar step was included
+          case 'generating_scene': return 0; // Index relative to STEPS_CONFIG above
+          case 'generating_animation': return 1;
+          case 'video_done': return STEPS_CONFIG.length - 1; // Point to 'Complete' (last index)
+          case 'failed':
+              // Try to determine where it failed, tricky without more state.
+              // Default to showing error at the last known *attempted* step.
+              // This requires storing the last *non-failed* status or inferring.
+              // Simplification: Show error at the start or end. Let's show at end for now.
+              return STEPS_CONFIG.length - 2; // Show failure at 'Animating Video' step
+          case 'queued': // Initial state or before scene starts
+          case 'avatar_done': // State before scene starts
+             return -1; // Indicate not started within this view's steps yet
+          default:
+              return -1; // Default/unknown
+      }
+  };
 
   const handleCopyLink = () => {
     // Placeholder: Generate a shareable link. In a real app, this might involve an API call.
@@ -146,9 +192,10 @@ function ProgressContent() {
   return (
     <div className="container mx-auto px-4 py-12 flex flex-col items-center">
       <h1 className="text-3xl font-bold mb-4">Generating Your Comic Short!</h1>
-      <p className="text-gray-600 mb-8">Job ID: <span className="font-mono bg-gray-100 px-1 rounded">{jobId || '...'}</span></p>
+      {/* Ensure jobId is displayed correctly */}
+      <p className="text-gray-600 mb-8">Job ID: <span className="font-mono bg-gray-100 px-1 rounded">{jobId || 'Loading...'}</span></p> 
 
-      {/* Progress Steps UI (8.1) - Simplified version */}
+      {/* Progress Steps UI (Ensure this uses currentStepIdx correctly) */}
       <div className="w-full max-w-2xl mb-8">
           <ol className="flex items-center">
               {STEPS_CONFIG.map((step, index) => (
@@ -165,25 +212,33 @@ function ProgressContent() {
                   </li>
               ))}
           </ol>
-           {/* Step Labels (Optional Enhancement) */}
-           <div className="flex justify-between mt-2">
+           {/* Step Labels */}
+           <div className="flex justify-between mt-2 text-center"> 
                {STEPS_CONFIG.map((step, index) => (
-                  <span key={`${step.id}-label`} className={`text-xs sm:text-sm ${currentStepIdx >= index ? 'font-semibold text-blue-700' : 'text-gray-500'}`}>
+                  <span 
+                    key={`${step.id}-label`} 
+                    className={`flex-1 text-xs sm:text-sm px-1 ${currentStepIdx >= index && currentStatus !== 'failed' ? 'font-semibold text-blue-700' : 'text-gray-500'}`}
+                  >
                       {step.label}
                   </span>
                ))}
            </div>
       </div>
 
-      {/* Status Message & Actions */}
+      {/* Status Message & Actions (Ensure this uses component state correctly) */}
       <div className="w-full max-w-md text-center p-6 border rounded-lg shadow-md bg-white">
-        {error ? (
+        {error && currentStatus === 'failed' ? ( // Show error only if status is failed
           <>
             <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2 text-red-700">Generation Failed</h2>
             <p className="text-gray-600 mb-4">{error}</p>
-            {/* Add Retry Button (8.6 - deferred) */}
-             <button className="mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Try Again (Not Implemented)</button>
+            {/* Consider adding a button to go back or contact support */}
+            <button 
+               onClick={() => router.back()} // Example: Go back
+               className="mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+            >
+                Go Back
+            </button>
           </>
         ) : currentStatus === 'video_done' ? (
           <>
@@ -223,16 +278,17 @@ function ProgressContent() {
             </div>
           </>
         ) : (
+          // Processing State UI
           <>
             <Loader2 className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-spin" />
             <h2 className="text-xl font-semibold mb-2">Processing...</h2>
             <p className="text-gray-600 mb-4">
                 Current Step: <span className="font-medium">{STEPS_CONFIG[currentStepIdx]?.label || 'Initializing'}...</span>
             </p>
-            {eta !== null && <p className="text-sm text-gray-500 mb-4">Estimated time remaining: {Math.ceil(eta)} seconds</p>}
-             {/* Removed Skeleton Loader (8.5) - replaced with simpler placeholder */}
+            {/* Display polling fetch errors temporarily if they occur */}
+            {error && <p className="text-sm text-orange-500 mb-4">{error}</p>} 
             <div className="space-y-3 mt-4 p-4 border border-dashed border-gray-300 rounded">
-              <p className="text-sm text-gray-500">Visual preview loading...</p>
+              <p className="text-sm text-gray-500">Generating your animation...</p>
             </div>
           </>
         )}

@@ -5,10 +5,10 @@
 # Priority: medium
 # Description: Create comprehensive logging, monitoring, and error handling systems
 # Details:
-Implement structured logging across all services. Set up error tracking with appropriate categorization. Create monitoring dashboards for system performance and model latency. Implement graceful degradation for API failures. Set up alerts for critical errors and performance issues. Add detailed error messages and recovery options for users. Implement the failure modal with friendly copy and 'Try again' functionality as specified in the PRD.
+Implement structured logging across all services. Set up error tracking with appropriate categorization. Create monitoring dashboards for system performance and model latency. Implement graceful degradation for API failures. Set up alerts for critical errors and performance issues. Add detailed error messages and recovery options for users. Implement the failure modal with friendly copy and 'Try again' functionality as specified in the PRD. Increased default Temporal activity startToCloseTimeout to 10 minutes to prevent premature timeouts during external API polling, downloads, and uploads, improving overall reliability.
 
 # Test Strategy:
-Test logging with various scenarios including errors and edge cases. Verify error tracking captures all relevant information. Test monitoring dashboards with simulated load. Confirm alerts trigger appropriately. Test user-facing error messages and recovery options for clarity and functionality.
+Test logging with various scenarios including errors and edge cases. Verify error tracking captures all relevant information. Test monitoring dashboards with simulated load. Confirm alerts trigger appropriately. Test user-facing error messages and recovery options for clarity and functionality. Verify that the extended Temporal timeout settings correctly prevent premature timeouts during long-running operations.
 
 # Subtasks:
 ## 14.1. Implement structured logging framework [pending]
@@ -58,4 +58,10 @@ Set up distributed tracing using OpenTelemetry. Propagate trace context across s
 ### Description: Implement health and readiness checks for all services
 ### Details:
 Create standardized health check endpoints for all services. Implement deep health checks that verify database connections and dependencies. Set up Kubernetes liveness and readiness probes. Configure monitoring for health check status.
+
+## 14.9. Configure Temporal timeout settings [pending]
+### Dependencies: None
+### Description: Adjust Temporal activity timeout configurations for long-running operations
+### Details:
+Increase default Temporal activity startToCloseTimeout to 10 minutes for workflows that involve external API polling, downloads, and uploads. Monitor the effects of these changes on workflow reliability. Document the timeout settings for different workflow types for future reference.
 

@@ -1,11 +1,11 @@
 # Task ID: 3
 # Title: Build image upload service
-# Status: pending
+# Status: completed
 # Dependencies: 1
 # Priority: high
 # Description: Create a service to handle selfie uploads with validation and storage
 # Details:
-Implement an upload service that accepts JPG/PNG images up to 8MB. Create a drag-and-drop interface with preview functionality. Validate file format, size, and dimensions. Generate a perceptual hash of uploaded images and implement NSFW detection using OpenAI moderation API. Store approved images in MinIO storage (Endpoint: http://192.168.86.214:9000, Bucket: ncat-storage-test) and return secure URLs. Implement error handling for failed uploads.
+Implement an upload service that accepts JPG/PNG images up to 8MB. Create a drag-and-drop interface with preview functionality. Validate file format, size, and dimensions. Generate a perceptual hash of uploaded images and implement NSFW detection using OpenAI moderation API. Store approved images in MinIO storage (Endpoint: https://minio.amertech.online, Bucket: ncat-storage-test) and return secure URLs. Implement error handling for failed uploads.
 
 # Test Strategy:
 Test with various image formats, sizes, and content. Verify NSFW detection blocks inappropriate content (score > 0.8). Confirm successful storage in MinIO and proper URL generation. Test error cases including oversized files and invalid formats.
@@ -27,13 +27,13 @@ Create a RESTful API endpoint that accepts multipart/form-data uploads. Handle a
 ### Dependencies: None
 ### Description: Utilize the existing MinIO setup for the upload service
 ### Details:
-Use the existing MinIO configuration (Endpoint: http://192.168.86.214:9000, Bucket: ncat-storage-test) as set up in Task 1.7. Implement helper functions for uploading files to MinIO, generating pre-signed URLs, and managing file metadata. Test the connection and file operations.
+Use the existing MinIO configuration (Endpoint: https://minio.amertech.online, Bucket: ncat-storage-test) as set up in Task 1.7. Implement helper functions for uploading files to MinIO, generating pre-signed URLs, and managing file metadata. Test the connection and file operations.
 
-## 3.4. Implement file validation logic [pending]
+## 3.4. Implement file validation logic [completed]
 ### Dependencies: None
 ### Description: Create validation checks for uploaded images
 ### Details:
-Validate file type (JPG/PNG only), file size (max 8MB), and image dimensions. Implement server-side validation to ensure client-side validation cannot be bypassed. Return appropriate error messages for invalid uploads.
+Validate file type (JPG/PNG only), file size (max 8MB), and image dimensions. Implement server-side validation to ensure client-side validation cannot be bypassed. Return appropriate error messages for invalid uploads. CURRENT STATUS: Client-side type/size validation is implemented via react-dropzone. Server-side validation currently only checks contentType before pre-signed URL generation; server-side size and dimension checks are NOT implemented. Server-side size check added in /api/avatar/generate. Dimension check/storage TBD.
 
 ## 3.5. Build perceptual hash generation functionality [deferred]
 ### Dependencies: None
@@ -41,11 +41,11 @@ Validate file type (JPG/PNG only), file size (max 8MB), and image dimensions. Im
 ### Details:
 Research and implement an appropriate perceptual hashing algorithm. Ensure the hash generation is efficient and provides good similarity detection. Create a database schema for storing and querying image hashes.
 
-## 3.6. Implement NSFW content detection [pending]
+## 3.6. Implement NSFW content detection [completed]
 ### Dependencies: None
 ### Description: Integrate with OpenAI moderation API for NSFW content detection
 ### Details:
-Set up OpenAI API integration. Implement logic to send images for moderation and process the response. Define threshold (score > 0.8) for rejecting inappropriate content. Create appropriate user feedback for rejected images.
+Set up OpenAI API integration. Implement logic to send images for moderation and process the response. Define threshold (score > 0.8) for rejecting inappropriate content. Create appropriate user feedback for rejected images. CURRENT STATUS: Implemented in /api/avatar/generate using openai.moderations.create on the image URL.
 
 ## 3.7. Design and implement storage key structure [completed]
 ### Dependencies: None

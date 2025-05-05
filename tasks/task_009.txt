@@ -1,6 +1,6 @@
 # Task ID: 9
 # Title: Build download and sharing functionality
-# Status: pending
+# Status: in-progress
 # Dependencies: 7
 # Priority: medium
 # Description: Create interfaces for downloading generated videos and sharing via links
@@ -11,17 +11,17 @@ Implement download functionality for the generated MP4 videos. Create a share li
 Test video downloads across different browsers. Verify share links work correctly and are properly formatted. Test watermark application for free users and removal for paid users. Confirm copy-to-clipboard functionality works as expected. Test with various video outputs. Validate CDN integration and delivery performance.
 
 # Subtasks:
-## 9.1. Design and implement download UI [pending]
+## 9.1. Design and implement download UI [in-progress]
 ### Dependencies: None
 ### Description: Create responsive UI components for video download functionality
 ### Details:
-Design download button and progress indicators. Implement responsive UI that works across device types. Add success/failure feedback mechanisms. Ensure accessibility compliance for all download UI elements.
+Design download button and progress indicators. Implement responsive UI that works across device types. Add success/failure feedback mechanisms. Ensure accessibility compliance for all download UI elements. CURRENT STATUS: Download button added to progress page on completion. Uses `resultUrl` from simulation/workflow.
 
-## 9.2. Implement share-link generation system [pending]
+## 9.2. Implement share-link generation system [in-progress]
 ### Dependencies: None
 ### Description: Create backend and frontend functionality for generating and using share links
 ### Details:
-Develop API endpoint for generating unique shareable links. Implement copy-to-clipboard functionality with user feedback. Create database schema for storing and tracking shared links. Design UI components for the sharing interface.
+Develop API endpoint for generating unique shareable links. Implement copy-to-clipboard functionality with user feedback. Create database schema for storing and tracking shared links. Design UI components for the sharing interface. CURRENT STATUS: 'Copy Share Link' button added to progress page. Uses `navigator.clipboard` to copy placeholder URL (current page URL). Backend link generation deferred.
 
 ## 9.3. Develop watermarking logic [pending]
 ### Dependencies: None

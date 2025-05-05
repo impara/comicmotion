@@ -3,59 +3,59 @@
 # Status: pending
 # Dependencies: 4, 5
 # Priority: high
-# Description: Create a service to generate themed backgrounds with the avatar
+# Description: Create a service to generate themed backgrounds with the avatar using Replicate's openai/gpt-image-1 model.
 # Details:
-Implement a service that takes the generated avatar URL and selected theme to create a 1920x1080 scene using Replicate's API. Create theme-specific prompts for each available theme option. Implement polling mechanism to check job status. Store the resulting scene URL and associate it with the user's session. Handle error cases and provide appropriate feedback. Ensure the avatar is properly integrated into the scene.
+Implement a service that takes the generated avatar URL and selected theme to create a 1920x1080 scene using the same Replicate API model (openai/gpt-image-1) used for avatar generation. Create theme-specific prompts suitable for this model. Implement polling mechanism to check job status. Store the resulting scene URL (initially from Replicate, then potentially MinIO) and associate it with the user's session. Handle error cases and provide appropriate feedback. Ensure the avatar input image is properly integrated into the scene by the model.
 
 # Test Strategy:
-Test scene generation with different avatar and theme combinations. Verify API calls to Replicate work correctly. Test polling mechanism and error handling. Confirm proper storage of scene URLs. Verify scene dimensions and quality meet requirements.
+Test scene generation with different avatar and theme combinations. Verify API calls to Replicate (openai/gpt-image-1) work correctly. Test polling mechanism and error handling. Confirm proper storage of scene URLs. Verify scene dimensions and quality meet requirements. Assess how well the model integrates the avatar into the themed background.
 
 # Subtasks:
-## 6.1. Design and implement scene generation API [pending]
+## 6.1. Design and implement scene generation API [completed]
 ### Dependencies: None
 ### Description: Create API endpoints to handle scene generation requests
 ### Details:
 Design RESTful API endpoints for scene generation that accept avatar URL and theme parameters. Implement input validation and sanitization. Create proper response structures for both synchronous and asynchronous operations.
 
-## 6.2. Develop theme-specific prompt templates [pending]
+## 6.2. Develop theme-specific prompt templates [completed]
 ### Dependencies: None
-### Description: Create and test prompts for each supported theme
+### Description: Create and test prompts suitable for openai/gpt-image-1 scene generation
 ### Details:
-Develop a library of prompt templates for each available theme. Create a prompt injection system that properly positions the avatar within the scene context. Test prompts with various avatar types to ensure consistent quality. Document prompt structures for future theme additions.
+Develop a library of prompt templates for each available theme, instructing openai/gpt-image-1 to generate the scene incorporating the input avatar image. CURRENT STATUS: Basic prompt templates defined in lib-shared/prompts.ts (getSceneGenerationPrompt). Updated to match openai/gpt-image-1 input structure. Further refinement may be needed based on results.
 
-## 6.3. Implement Replicate API integration [pending]
+## 6.3. Implement Replicate API integration [completed]
 ### Dependencies: None
-### Description: Connect to Replicate's API for scene generation
+### Description: Connect to Replicate's API (openai/gpt-image-1) for scene generation
 ### Details:
-Set up authentication with Replicate API. Implement the API client for submitting scene generation jobs. Configure request parameters to ensure 1920x1080 output. Test API responses and handle rate limiting appropriately.
+Set up authentication with Replicate API (handled by shared client). Implement the API call logic within startSceneGeneration function in lib-shared, targeting openai/gpt-image-1. Configure request parameters to ensure 1920x1080 output (via aspect_ratio) and pass avatar image URL. Test API responses and handle rate limiting appropriately. CURRENT STATUS: Basic client setup in packages/lib-shared/src/replicate.ts. startSceneGeneration function updated to use openai/gpt-image-1 model identifier and input structure.
 
-## 6.4. Build polling and retry mechanism [pending]
+## 6.4. Build polling and retry mechanism [completed]
 ### Dependencies: None
 ### Description: Create a robust system to check job status and handle retries
 ### Details:
-Implement a polling system to check Replicate job status at appropriate intervals. Create exponential backoff strategy for retries. Set maximum retry attempts and timeout thresholds. Log all polling events for debugging purposes.
+Implement a polling system to check Replicate job status at appropriate intervals. Create exponential backoff strategy for retries. Set maximum retry attempts and timeout thresholds. Log all polling events for debugging purposes. CURRENT STATUS: Polling logic with heartbeat, timeout, and status checks implemented within the generateScene Temporal activity. Retries are configured at the activity proxy level in the workflow definition.
 
-## 6.5. Develop asset storage system [pending]
+## 6.5. Develop asset storage system [completed]
 ### Dependencies: None
 ### Description: Store and manage generated scene images
 ### Details:
-Implement storage solution for scene images. Create a database schema to associate scenes with user sessions. Develop cleanup processes for abandoned or expired scenes. Configure appropriate caching headers for efficient delivery.
+Implement storage solution for scene images. Create a database schema to associate scenes with user sessions. Develop cleanup processes for abandoned or expired scenes. Configure appropriate caching headers for efficient delivery. CURRENT STATUS: generateScene activity now downloads the result from Replicate, uploads it to MinIO using uploadStreamToS3 from storage package, following TSD key structure. Stores the MinIO URL/key in the Scene database record. Cleanup processes TBD (part of deletion task 11). Caching headers TBD.
 
-## 6.6. Implement comprehensive error handling [pending]
+## 6.6. Implement comprehensive error handling [in-progress]
 ### Dependencies: None
 ### Description: Handle all potential failure scenarios
 ### Details:
-Create error handling for API failures, timeout conditions, and invalid inputs. Implement user-friendly error messages. Set up logging for all error conditions. Create monitoring alerts for critical failures.
+Create error handling for API failures, timeout conditions, and invalid inputs. Implement user-friendly error messages. Set up logging for all error conditions. Create monitoring alerts for critical failures. CURRENT STATUS: Basic try/catch blocks implemented in generateScene activity and workflow. Failures update DB status to 'failed' and log errors. Activity errors are propagated to the workflow. More specific error handling, user messaging, and monitoring integration deferred to Task 14.
 
-## 6.7. Develop compensation/rollback mechanism [pending]
+## 6.7. Develop compensation/rollback mechanism [completed]
 ### Dependencies: None
 ### Description: Handle failures by rolling back avatar generation if needed
 ### Details:
-Implement a compensation pattern to handle scene generation failures. Create logic to determine when to rollback avatar generation. Ensure proper cleanup of resources in failure scenarios. Test rollback functionality under various error conditions.
+Implement a compensation pattern to handle scene generation failures. Create logic to determine when to rollback avatar generation. Ensure proper cleanup of resources in failure scenarios. Test rollback functionality under various error conditions. CURRENT STATUS: Implemented compensation in generateSceneWorkflow catch block. Calls deleteAssetActivity to remove the avatar from MinIO storage, aligning with TSD rollback requirement. Relies on avatarUrl input containing the MinIO URL/key.
 
 ## 6.8. Integrate scene generation with user flow [pending]
 ### Dependencies: None
 ### Description: Connect scene generation service with the overall application flow
 ### Details:
-Integrate scene generation into the main application workflow. Update UI to display scene generation status. Implement transitions between avatar creation and scene generation. Test end-to-end user flow with various scenarios.
+Integrate scene generation into the main application workflow. Update UI to display scene generation status. Implement transitions between avatar creation and scene generation. Test end-to-end user flow with various scenarios. CURRENT STATUS: Backend API (/api/scene/generate) and Temporal workflow (generateSceneWorkflow) are implemented. Frontend integration (calling the API after theme selection and handling progress/results) is pending. Likely involves changes in /themes page and potentially integrating with progress tracking (Task 8).
 

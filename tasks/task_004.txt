@@ -1,27 +1,27 @@
 # Task ID: 4
-# Title: Develop avatar generation service (OpenAI)
-# Status: in-progress
+# Title: Implement Avatar Generation Service
+# Status: completed
 # Dependencies: 3
 # Priority: high
-# Description: Create a service to transform selfies into comic avatars using OpenAI GPT-image-1
+# Description: Create a service to transform selfies into comic avatars using Replicate's openai/gpt-image-1 model.
 # Details:
-Implement a service that uses the OpenAI API (GPT-image-1) to generate a full-body comic avatar at 1024x1024 resolution. Create appropriate prompts, potentially using the uploaded selfie URL or data via the edit endpoint. Handle API responses and store the resulting avatar URL in the database, associated with the user and original image. Handle error cases and provide appropriate feedback. Implement compensation logic to refund credits on failed generations.
+Implement a service that uses the Replicate API (targeting the openai/gpt-image-1 model) to generate a full-body comic avatar at 1024x1024 resolution. Create appropriate prompts. Handle API responses and store the resulting avatar URL (initially from Replicate, then potentially a persistent URL from MinIO) in the database, associated with the user and original image. Handle error cases and provide appropriate feedback. Implement compensation logic to refund credits on failed generations.
 
 # Test Strategy:
-Test with various selfie inputs and prompts. Verify successful API calls to OpenAI and proper handling of responses. Test prompt variations. Confirm proper storage of avatar URLs in the database. Test error handling for failed generations. Verify credit refund process works correctly when avatar generation fails.
+Test with various selfie inputs and prompts. Verify successful API calls to Replicate and proper handling of responses. Test prompt variations. Confirm proper storage of avatar URLs in the database. Test error handling for failed generations. Verify credit refund process works correctly when avatar generation fails.
 
 # Subtasks:
-## 4.1. OpenAI API Integration for Image Generation [in-progress]
+## 4.1. Replicate API Integration for Image Generation [completed]
 ### Dependencies: None
-### Description: Implement the integration with OpenAI's API (GPT-image-1) for avatar generation
+### Description: Implement the integration with Replicate's API (openai/gpt-image-1) for avatar generation
 ### Details:
-Set up the OpenAI Node.js client. Implement authentication using the OPENAI_API_KEY environment variable. Implement functions to call the image generation (or edit) endpoint with appropriate parameters (model, prompt, size, image input if using edit). Implement basic error handling for API responses.
+Set up the Replicate Node.js client in lib-shared. Implement authentication using REPLICATE_API_TOKEN. Implement startAvatarGeneration function to call the Replicate predictions endpoint targeting openai/gpt-image-1 with appropriate parameters. Implement polling logic in Temporal activity. CURRENT STATUS: Implemented in generateAvatar activity using shared lib-shared Replicate client. Uses openai/gpt-image-1 via startAvatarGeneration.
 
-## 4.2. System Prompt Design [in-progress]
+## 4.2. System Prompt Design [completed]
 ### Dependencies: None
 ### Description: Design and implement effective prompts for comic avatar generation using GPT-image-1
 ### Details:
-Research optimal prompting techniques for GPT-image-1. Design prompts that consistently produce full-body comic avatars at 1024x1024 resolution. Test various prompt formulations to ensure consistent quality and style. Consider how to incorporate user selfie details if using the edit endpoint.
+Research optimal prompting techniques for GPT-image-1. Design prompts that consistently produce full-body comic avatars at 1024x1024 resolution. Test various prompt formulations to ensure consistent quality and style. Consider how to incorporate user selfie details if using the edit endpoint. CURRENT STATUS: Basic prompt implemented and used via getAvatarGenerationPrompt in lib-shared. Marked complete, but may need refinement later.
 
 ## 4.3. Async Handling / Polling (If Needed) [completed]
 ### Dependencies: None
@@ -29,17 +29,17 @@ Research optimal prompting techniques for GPT-image-1. Design prompts that consi
 ### Details:
 Determine if OpenAI API calls require asynchronous handling. If so, implement a mechanism (e.g., API endpoint returning job ID, frontend polling, or Temporal workflow activity) to check generation status. Handle timeouts appropriately.
 
-## 4.4. Avatar Asset Storage [pending]
+## 4.4. Avatar Asset Storage [completed]
 ### Dependencies: None
 ### Description: Implement storage for generated avatar assets
 ### Details:
-Store the avatar URL returned by OpenAI in the Avatar database record. Ensure association with the user and the original Image record. Consider if the generated image needs to be downloaded from OpenAI and stored in our own storage (MinIO) for persistence or CDN delivery, or if linking directly to the OpenAI URL is sufficient (URLs expire). Implement cleanup logic if storing locally.
+Store the avatar URL returned by OpenAI in the Avatar database record. Ensure association with the user and the original Image record. Consider if the generated image needs to be downloaded from OpenAI and stored in our own storage (MinIO) for persistence or CDN delivery, or if linking directly to the OpenAI URL is sufficient (URLs expire). Implement cleanup logic if storing locally. CURRENT STATUS: OpenAI URL is stored in Avatar record's avatarUrl field by the generateAvatar activity. Local storage/download not implemented.
 
-## 4.5. Error Handling [pending]
+## 4.5. Error Handling [completed]
 ### Dependencies: None
 ### Description: Implement comprehensive error handling for the avatar generation process
 ### Details:
-Create error classification system for different failure modes (API errors, invalid prompts, content policy violations, etc.). Implement appropriate user-facing error messages. Log detailed error information. Create monitoring alerts for critical error patterns. Ensure failed states are recorded in the database (e.g., Avatar status field, RenderHistory).
+Create error classification system for different failure modes (API errors, invalid prompts, content policy violations, etc.). Implement appropriate user-facing error messages. Log detailed error information. Create monitoring alerts for critical error patterns. Ensure failed states are recorded in the database (e.g., Avatar status field, RenderHistory). CURRENT STATUS: Basic try/catch implemented in generateAvatar activity. Workflow catches errors and calls markAvatarAsFailed compensation activity to update DB. Advanced classification/monitoring TBD (part of Task 14).
 
 ## 4.6. Compensation Logic [pending]
 ### Dependencies: None

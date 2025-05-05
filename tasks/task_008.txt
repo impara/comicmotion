@@ -1,6 +1,6 @@
 # Task ID: 8
 # Title: Implement progress tracking system
-# Status: pending
+# Status: in-progress
 # Dependencies: 4, 6, 7
 # Priority: medium
 # Description: Create a real-time progress tracking system with ETA for the generation process
@@ -11,11 +11,11 @@ Implement a WebSocket-based progress tracking system that provides real-time upd
 Test real-time progress updates through the entire generation pipeline. Verify WebSocket connections are established and maintained. Test ETA calculations for accuracy. Verify proper display of progress states and error conditions. Test recovery options when errors occur.
 
 # Subtasks:
-## 8.1. Design and implement real-time progress UI component [pending]
+## 8.1. Design and implement real-time progress UI component [in-progress]
 ### Dependencies: None
 ### Description: Create a responsive UI component that shows the current generation step, progress percentage, and estimated time remaining
 ### Details:
-Follow the card-based step design from the PRD (Progress: 1 ▶ 2 ▶ 3). Implement state transitions and animations between steps. Include visual indicators for completed, current, and pending steps.
+Follow the card-based step design from the PRD (Progress: 1 ▶ 2 ▶ 3). Implement state transitions and animations between steps. Include visual indicators for completed, current, and pending steps. CURRENT STATUS: Basic page structure created at /progress/[jobId]. Reads jobId, displays step indicators, and shows simulated status updates. Uses icons for different states.
 
 ## 8.2. Implement WebSocket client integration [pending]
 ### Dependencies: None
@@ -35,17 +35,17 @@ Create a service that polls the status of generation jobs from different microse
 ### Details:
 Collect and analyze historical processing time data for each generation step. Implement a weighted average algorithm that factors in current system load. Update ETA dynamically as processing progresses.
 
-## 8.5. Implement skeleton loader animations [pending]
+## 8.5. Implement skeleton loader animations [in-progress]
 ### Dependencies: None
 ### Description: Create placeholder animations that display while content is being generated
 ### Details:
-Design skeleton loaders that match the final content layout. Implement smooth transitions between loading and content states. Ensure loaders are accessible and respect user preferences for reduced motion.
+Design skeleton loaders that match the final content layout. Implement smooth transitions between loading and content states. Ensure loaders are accessible and respect user preferences for reduced motion. CURRENT STATUS: Basic placeholder div implemented instead of Shadcn Skeleton due to missing dependency. Shows a 'Visual preview loading...' message.
 
-## 8.6. Implement error state handling and recovery options [pending]
+## 8.6. Implement error state handling and recovery options [in-progress]
 ### Dependencies: None
 ### Description: Create robust error handling with user-friendly recovery options
 ### Details:
-Implement error state UI with clear error messages. Provide retry options for failed steps. Create a system to resume generation from the last successful step when possible.
+Implement error state UI with clear error messages. Provide retry options for failed steps. Create a system to resume generation from the last successful step when possible. CURRENT STATUS: Basic error display implemented based on simulated errors. Retry button placeholder added.
 
 ## 8.7. Create WebSocket server endpoint for progress updates [pending]
 ### Dependencies: None

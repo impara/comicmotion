@@ -59,3 +59,9 @@ Set up Next.js middleware to protect routes based on authentication status and u
 ### Details:
 Apply security headers, CSRF protection, rate limiting, and other security measures to protect against common vulnerabilities. Document security implementations for SOC2 compliance.
 
+## 2.9. Implement Clerk User Sync to Database (Webhook) [pending]
+### Dependencies: None
+### Description: Create a webhook handler to receive user.created and user.updated events from Clerk and create/update corresponding records in the local User database table.
+### Details:
+Set up an API route (e.g., /api/webhooks/clerk). Use Clerk's webhook verification helpers. On user.created/updated events, extract relevant user data (Clerk ID, email) and perform a Prisma upsert operation on the User table, ensuring the local database stays synchronized with Clerk user identities.
+

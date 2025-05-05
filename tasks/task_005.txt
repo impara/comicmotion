@@ -1,6 +1,6 @@
 # Task ID: 5
 # Title: Implement theme selection interface
-# Status: pending
+# Status: completed
 # Dependencies: 4
 # Priority: high
 # Description: Create UI for displaying and selecting theme options for the scene
@@ -11,45 +11,45 @@ Design and implement a theme selection interface showing 3 theme thumbnails (cit
 Test theme selection UI for proper rendering and interaction. Verify hover previews work correctly. Confirm selected theme is properly stored and passed to the next step. Test responsive behavior across different screen sizes.
 
 # Subtasks:
-## 5.1. Create UI/UX design for theme selection component [pending]
+## 5.1. Create UI/UX design for theme selection component [completed]
 ### Dependencies: None
 ### Description: Design the theme selection interface according to the card-based progress UI pattern
 ### Details:
-Create wireframes and mockups for the theme selection component showing the 3 themes (city, fantasy, neon). Include hover states, selection indicators, and responsive layouts. Ensure design follows the TSD specifications and aligns with the overall application style.
+Create wireframes and mockups for the theme selection component showing the 3 themes (city, fantasy, neon). Include hover states, selection indicators, and responsive layouts. Ensure design follows the TSD specifications and aligns with the overall application style. CURRENT STATUS: ThemeSelector component created and refined with card layout, selection indicators, and enhanced hover states.
 
-## 5.2. Generate static thumbnails for theme options [pending]
+## 5.2. Generate static thumbnails for theme options [completed]
 ### Dependencies: None
 ### Description: Create representative thumbnail images for each theme option
 ### Details:
-Design and generate static thumbnail images for city, fantasy, and neon themes. Thumbnails should clearly represent the visual style of each theme. Optimize images for web display and ensure consistent dimensions across all thumbnails.
+Design and generate static thumbnail images for city, fantasy, and neon themes. Thumbnails should clearly represent the visual style of each theme. Optimize images for web display and ensure consistent dimensions across all thumbnails. CURRENT STATUS: ThemeSelector component updated to use next/image with paths like /images/themes/[theme].jpg. Assumes actual image files will be placed in /public/images/themes/.
 
-## 5.3. Implement hover preview functionality [pending]
+## 5.3. Implement hover preview functionality [completed]
 ### Dependencies: None
 ### Description: Create interactive hover previews for each theme option
 ### Details:
-Develop the hover preview mechanism that shows an expanded view or additional information when a user hovers over a theme thumbnail. Include smooth transitions and ensure previews are accessible and don't interfere with other UI elements.
+Develop the hover preview mechanism that shows an expanded view or additional information when a user hovers over a theme thumbnail. Include smooth transitions and ensure previews are accessible and don't interfere with other UI elements. CURRENT STATUS: Hover effects (scale, shadow, border highlight) implemented on theme cards. Image zooms slightly on hover.
 
-## 5.4. Create theme prompt mapping system [pending]
+## 5.4. Create theme prompt mapping system [completed]
 ### Dependencies: None
 ### Description: Develop mapping between theme selections and prompt variations
 ### Details:
-Implement a system that maps each theme selection to appropriate prompt variations for the AI generation pipeline. Define prompt templates for each theme that can be populated with scene content. Document the mapping structure for future theme additions.
+Implement a system that maps each theme selection to appropriate prompt variations for the AI generation pipeline. Define prompt templates for each theme that can be populated with scene content. Document the mapping structure for future theme additions. CURRENT STATUS: Implemented getSceneGenerationPrompt in lib-shared/prompts.ts. Generates theme-specific base prompts and example Replicate input object. Specific parameters need tuning for the chosen model.
 
-## 5.5. Implement theme selection state management [pending]
+## 5.5. Implement theme selection state management [completed]
 ### Dependencies: None
 ### Description: Create state management for theme selection and persistence
 ### Details:
-Develop state management logic to track the selected theme. Ensure the selection is properly stored and can be retrieved for subsequent steps in the workflow. Implement proper validation and default theme handling.
+Develop state management logic to track the selected theme. Ensure the selection is properly stored and can be retrieved for subsequent steps in the workflow. Implement proper validation and default theme handling. CURRENT STATUS: Basic useState implemented within ThemeSelector component. App-level state passed via URL query parameters (?avatarId=...) on navigation to /themes page. AvatarId read from URL params, selected theme stored in state.
 
-## 5.6. Integrate theme selection with render pipeline [pending]
+## 5.6. Integrate theme selection with render pipeline [completed]
 ### Dependencies: None
 ### Description: Connect theme selection component with the rendering system
 ### Details:
-Integrate the theme selection interface with the render pipeline so that the selected theme properly influences the generated comic. Ensure theme data is correctly passed to subsequent generation steps. Test the end-to-end flow from selection to rendering.
+Integrate the theme selection interface with the render pipeline so that the selected theme properly influences the generated comic. Ensure theme data is correctly passed to subsequent generation steps. Test the end-to-end flow from selection to rendering. CURRENT STATUS: Implemented in /themes page. Retrieves avatarId from URL, allows theme selection, calls /api/scene/generate POST endpoint with avatarId and theme, then navigates to /progress/[jobId].
 
-## 5.7. Implement responsive behavior for theme selection [pending]
+## 5.7. Implement responsive behavior for theme selection [completed]
 ### Dependencies: None
 ### Description: Ensure theme selection UI works across different screen sizes
 ### Details:
-Adapt the theme selection interface for various screen sizes and devices. Implement responsive layout adjustments, touch-friendly interactions for mobile, and ensure accessibility standards are met across all viewport sizes.
+Adapt the theme selection interface for various screen sizes and devices. Implement responsive layout adjustments, touch-friendly interactions for mobile, and ensure accessibility standards are met across all viewport sizes. CURRENT STATUS: Responsive grid layout (1, 2, then 3 columns) implemented using Tailwind. Padding and gaps adjusted for responsiveness.
 

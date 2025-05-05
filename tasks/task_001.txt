@@ -59,7 +59,7 @@ Configure the PostgreSQL connection using Prisma or another ORM as specified in 
 ### Dependencies: None
 ### Description: Configure MinIO object storage and CDN for asset storage and delivery
 ### Details:
-Set up connection to the existing MinIO instance (Endpoint: http://192.168.86.214:9000, Bucket: ncat-storage-test). Configure CDN for asset delivery if applicable. Create utility functions for uploading, retrieving, and managing assets using the S3 API (via AWS SDK). Implement proper authentication using environment variables (S3_ACCESS_KEY, S3_SECRET_KEY). Create a shared package within the monorepo (e.g., packages/storage) for storage-related functionality.
+Set up connection to the existing MinIO instance (Endpoint: https://minio.amertech.online, Bucket: ncat-storage-test). Configure CDN for asset delivery if applicable. Create utility functions for uploading, retrieving, and managing assets using the S3 API (via AWS SDK). Implement proper authentication using environment variables (S3_ACCESS_KEY, S3_SECRET_KEY). Create a shared package within the monorepo (e.g., packages/storage) for storage-related functionality.
 
 ## 1.8. Code Quality Tools [completed]
 ### Dependencies: None

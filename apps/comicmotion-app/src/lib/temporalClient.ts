@@ -2,7 +2,7 @@ import { Connection, Client } from '@temporalio/client';
 
 // Define the connection options. Adjust address if your Temporal server is elsewhere.
 const connectionOptions = {
-  address: 'localhost:7233', // Default Temporal frontend address
+  address: '127.0.0.1:7233', // Explicitly use IPv4 loopback
   // Specify TLS options if necessary, e.g., for Temporal Cloud:
   // tls: {}, 
 };

@@ -8,58 +8,233 @@ export interface GenerateAvatarWorkflowInput {
   imageId: string;
   userId: string;
   originalImageUrl: string;
+  // theme: string; // Removed theme input
 }
 
-// Get activity functions callable from the workflow
-const { generateAvatar, markAvatarAsFailed } = wf.proxyActivities<typeof activities>({
-  startToCloseTimeout: '1 minute', // Timeout for a single activity attempt
-  // Configure retries if needed
+// Define common activity options for easier reuse
+const defaultActivityOptions: wf.ActivityOptions = {
+  startToCloseTimeout: '1 minute', 
   retry: {
-    // initialInterval: '1 second',
-    // maximumAttempts: 3,
+     initialInterval: '1 second',
+     backoffCoefficient: 2,
+     maximumInterval: '1 minute',
+     maximumAttempts: 3, 
+     // Consider making Error non-retryable for specific activities if needed
+     // nonRetryableErrorTypes: ['Error'], 
   },
-});
+  heartbeatTimeout: '1 minute', // Keep heartbeat for potentially long activities
+};
+
+// Get activity functions callable from the workflow
+const {
+  generateAvatar,
+  generateScene,
+  generateAnimation, // Add new activity
+  markAvatarAsFailed,
+  deleteAssetActivity,
+} = wf.proxyActivities<typeof activities>(defaultActivityOptions);
+
+// Proxy compensation activities with potentially shorter timeouts/retries
+const compensationActivityOptions: wf.ActivityOptions = {
+  startToCloseTimeout: '30 seconds', 
+  retry: { maximumAttempts: 2 }, 
+};
+const { 
+    deleteAssetActivity: deleteAssetCompensation, // Rename for clarity
+    markAvatarAsFailed: markAvatarFailedCompensation // Rename for clarity
+} = wf.proxyActivities<typeof activities>(compensationActivityOptions);
 
 // Define the main workflow function
-// This matches the 'generateAvatarWorkflow' name used in the API route
 export async function generateAvatarWorkflow(input: GenerateAvatarWorkflowInput): Promise<string> {
-  const avatarId = input.avatarId;
-  console.log(`[Workflow:${avatarId}] Started.`);
+  const { avatarId, userId } = input; // Removed theme
+  const workflowId = wf.workflowInfo().workflowId;
+  wf.log.info(`[Workflow:${workflowId}] Started. AvatarId: ${avatarId}`);
   
   let generatedAvatarUrl = '';
+  // let generatedSceneUrl = ''; // Removed scene URL
 
   try {
     // Step 1: Call the avatar generation activity
-    console.log(`[Workflow:${avatarId}] Calling generateAvatar activity...`);
-    const result = await generateAvatar(input); // Pass the full input
-    generatedAvatarUrl = result.avatarUrl;
-    console.log(`[Workflow:${avatarId}] Activity generateAvatar completed. URL: ${generatedAvatarUrl}`);
+    wf.log.info(`[Workflow:${workflowId}] Calling generateAvatar activity...`);
+    const avatarResult = await generateAvatar(input); // Pass the full input
+    generatedAvatarUrl = avatarResult.avatarUrl;
+    wf.log.info(`[Workflow:${workflowId}] Activity generateAvatar completed. URL: ${generatedAvatarUrl}`);
 
-    // Step 2: TODO - Call scene generation workflow/activity (if part of this workflow)
-    // console.log(`[Workflow:${avatarId}] Calling generateScene activity...`);
-    // await generateScene(avatarId, generatedAvatarUrl, ...);
+    // Step 2: Scene generation moved to separate workflow
+    // wf.log.info(`[Workflow:${workflowId}] Calling generateScene activity...`);
+    // ... (removed scene generation call) ...
 
     // Step 3: TODO - Call animation workflow/activity (if part of this workflow)
-    // console.log(`[Workflow:${avatarId}] Calling generateAnimation activity...`);
+    // wf.log.info(`[Workflow:${workflowId}] Calling generateAnimation activity...`);
     // await generateAnimation(...);
 
-    console.log(`[Workflow:${avatarId}] Completed successfully.`);
-    return `Avatar ${avatarId} generation successful. URL: ${generatedAvatarUrl}`;
+    wf.log.info(`[Workflow:${workflowId}] Completed successfully. Avatar: ${generatedAvatarUrl}`);
+    return `Workflow ${workflowId} completed. Avatar: ${generatedAvatarUrl}`;
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown workflow error';
-    console.error(`[Workflow:${avatarId}] Failed:`, error);
-
-    // Compensation: Mark the avatar as failed in the DB
+    wf.log.error(`[Workflow:${workflowId}] Failed: ${errorMessage}`, error instanceof Error ? { error: error.stack } : { error });
     try {
-      await markAvatarAsFailed(avatarId, errorMessage);
-      console.log(`[Workflow:${avatarId}] Compensation: Marked avatar as failed.`);
+      await markAvatarFailedCompensation(avatarId, errorMessage);
+      wf.log.warn(`[Workflow:${workflowId}] Compensation: Marked avatar ${avatarId} as failed.`);
     } catch (compensationError) {
-      console.error(`[Workflow:${avatarId}] CRITICAL: Compensation activity markAvatarAsFailed failed:`, compensationError);
-      // Log critical failure, manual intervention might be needed
+      wf.log.error(
+          `[Workflow:${workflowId}] CRITICAL: Compensation activity markAvatarAsFailed failed: ${compensationError instanceof Error ? compensationError.message : 'Unknown reason'}`,
+          compensationError instanceof Error ? { error: compensationError.stack } : { compensationError }
+      );
     }
-
-    // Rethrow the error to mark the workflow run as failed
     throw error;
   }
+}
+
+// --- Generate Scene Workflow --- //
+
+export interface GenerateSceneWorkflowInput {
+  avatarId: string;
+  userId: string;
+  theme: string;
+  avatarUrl: string; // Need the URL to pass to the activity
+  durationSeconds?: number; // Add duration here
+}
+
+export interface GenerateSceneWorkflowOutput {
+    sceneUrl: string;
+    // animationPredictionId?: string; // No longer needed from workflow output
+    finalVideoUrl?: string; // If animation completes here
+}
+
+export async function generateSceneWorkflow(input: GenerateSceneWorkflowInput): Promise<GenerateSceneWorkflowOutput> {
+  const { avatarId, userId, theme, avatarUrl, durationSeconds } = input; // Include durationSeconds
+  const workflowId = wf.workflowInfo().workflowId;
+  wf.log.info(`[Workflow:${workflowId}] Started Scene & Animation Generation. AvatarId: ${avatarId}, Theme: ${theme}, Duration: ${durationSeconds || 'default'}`);
+
+  let generatedSceneUrl = '';
+  let sceneDbId = ''; // Placeholder ID
+  let finalVideoUrl: string | undefined = undefined;
+
+  try {
+    // 1. Call the scene generation activity
+    wf.log.info(`[Workflow:${workflowId}] Calling generateScene activity...`);
+    const sceneActivityInput: activities.GenerateSceneInput = { avatarId, userId, avatarUrl, theme };
+    const sceneResult = await generateScene(sceneActivityInput);
+    generatedSceneUrl = sceneResult.sceneUrl;
+    sceneDbId = `scene_for_${avatarId}`; // Still using placeholder ID
+    wf.log.info(`[Workflow:${workflowId}] Activity generateScene completed. Scene URL: ${generatedSceneUrl}`);
+
+    // 2. Call the animation generation activity (which now handles polling and storage)
+    wf.log.info(`[Workflow:${workflowId}] Calling generateAnimation activity...`);
+    const animationActivityInput: activities.GenerateAnimationInput = {
+        sceneId: sceneDbId, 
+        sceneUrl: generatedSceneUrl, 
+        userId: userId,
+        durationSeconds: durationSeconds // Pass duration
+    };
+    const animationResult = await generateAnimation(animationActivityInput);
+    finalVideoUrl = animationResult.finalAnimationUrl;
+    wf.log.info(`[Workflow:${workflowId}] Activity generateAnimation completed. Final Video URL: ${finalVideoUrl}`);
+
+    // 3. Polling is now handled within generateAnimation activity
+    // --- Placeholder logic removed --- 
+
+    wf.log.info(`[Workflow:${workflowId}] Workflow Completed Successfully. Scene: ${generatedSceneUrl}, Video: ${finalVideoUrl}`);
+    return { 
+        sceneUrl: generatedSceneUrl, 
+        finalVideoUrl: finalVideoUrl 
+    };
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown workflow error';
+    wf.log.error(`[Workflow:${workflowId}] Scene/Animation Generation Failed: ${errorMessage}`, error instanceof Error ? { error: error.stack } : { error });
+
+    // --- Compensation Logic --- 
+    // Activities attempt to mark their DB records as failed.
+    // Workflow attempts to delete assets.
+    wf.log.warn(`[Workflow:${workflowId}] Generation failed. Attempting to delete assets as compensation.`);
+    
+    // Attempt to delete the final video asset if its URL was generated *before* the error
+    // (Less likely now polling is in activity, but possible if error happens *after* activity completes but before workflow returns)
+    if (finalVideoUrl) { 
+         try {
+             const videoKey = extractKeyFromUrl(finalVideoUrl);
+             if (videoKey) {
+                 wf.log.info(`[Workflow:${workflowId}] Calling deleteAssetActivity (compensation) for video key: ${videoKey}`);
+                 await deleteAssetCompensation({ assetKey: videoKey });
+                 wf.log.warn(`[Workflow:${workflowId}] Compensation: deleteAssetActivity called for video.`);
+             } else {
+                 wf.log.warn(`[Workflow:${workflowId}] Could not parse video key from URL: ${finalVideoUrl}. Skipping video deletion.`);
+             }
+         } catch (videoDeleteError) {
+             wf.log.error(
+                 `[Workflow:${workflowId}] Compensation activity deleteAssetActivity for video failed: ${videoDeleteError instanceof Error ? videoDeleteError.message : 'Unknown reason'}`,
+                 videoDeleteError instanceof Error ? { error: videoDeleteError.stack } : { videoDeleteError }
+             );
+         }
+     }
+
+    // Attempt to delete the scene asset if its URL was generated
+    if (generatedSceneUrl) {
+        try {
+            const sceneKey = extractKeyFromUrl(generatedSceneUrl);
+            if (sceneKey) {
+                wf.log.info(`[Workflow:${workflowId}] Calling deleteAssetActivity (compensation) for scene key: ${sceneKey}`);
+                await deleteAssetCompensation({ assetKey: sceneKey }); 
+                wf.log.warn(`[Workflow:${workflowId}] Compensation: deleteAssetActivity called for scene.`);
+            } else {
+                wf.log.warn(`[Workflow:${workflowId}] Could not parse scene key from URL: ${generatedSceneUrl}. Skipping scene deletion.`);
+            }
+        } catch (sceneDeleteError) {
+            wf.log.error(
+                `[Workflow:${workflowId}] Compensation activity deleteAssetActivity for scene failed: ${sceneDeleteError instanceof Error ? sceneDeleteError.message : 'Unknown reason'}`,
+                sceneDeleteError instanceof Error ? { error: sceneDeleteError.stack } : { sceneDeleteError }
+            );
+        }
+    }
+
+    // Always attempt to delete the original avatar asset (passed in as input)
+    try {
+      const avatarKey = extractKeyFromUrl(avatarUrl);
+      if (avatarKey) {
+        wf.log.info(`[Workflow:${workflowId}] Calling deleteAssetActivity (compensation) for avatar key: ${avatarKey}`);
+        await deleteAssetCompensation({ assetKey: avatarKey });
+        wf.log.warn(`[Workflow:${workflowId}] Compensation: deleteAssetActivity called for avatar ${avatarId}.`);
+      } else {
+         wf.log.warn(`[Workflow:${workflowId}] Could not parse avatar key from URL: ${avatarUrl}. Skipping avatar deletion.`);
+      }
+    } catch (avatarDeleteError) {
+       wf.log.error(
+          `[Workflow:${workflowId}] Compensation activity deleteAssetActivity for avatar failed: ${avatarDeleteError instanceof Error ? avatarDeleteError.message : 'Unknown reason'}`,
+          avatarDeleteError instanceof Error ? { error: avatarDeleteError.stack } : { avatarDeleteError }
+      );
+    }
+
+    throw error; // Rethrow the original error to fail the workflow
+  }
+}
+
+// Helper function to extract storage key from URL (basic implementation)
+function extractKeyFromUrl(url: string): string | null {
+    try {
+        const parsedUrl = new URL(url);
+        // Assuming format like /bucket-name/assets/userId/...) 
+        // or just /assets/userId/... if bucket is part of hostname/endpoint
+        let path = parsedUrl.pathname;
+        if (path.startsWith('/')) {
+            path = path.substring(1);
+        }
+        // Basic check if it looks like our asset path
+        if (path.startsWith('assets/')) { 
+            // Remove potential bucket name prefix if present (simple check)
+            const parts = path.split('/');
+            if (parts.length > 1 && parts[1] === 'assets') { // e.g., /bucket/assets/...
+                return parts.slice(1).join('/'); // Return 'assets/userId/...'
+            } else { // e.g., /assets/userId/...
+                return path; 
+            }
+        } 
+        wf.log.warn(`URL path "${path}" does not seem to be a recognized asset key format.`);
+        return null;
+    } catch (e) {
+        wf.log.error(`Failed to parse URL or extract key: ${url}`, e instanceof Error ? { error: e.stack } : { error: e });
+        return null;
+    }
 } 

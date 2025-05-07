@@ -46,3 +46,4 @@ pnpm-lock.yaml
 # Check it into source control to share your project settings with team members
 # /tasks/
 .cursor-rules.yaml
+animation.mp4

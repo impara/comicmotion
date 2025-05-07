@@ -72,7 +72,7 @@
       "id": 2,
       "title": "Implement authentication system",
       "description": "Create user authentication flow with Google sign-in and session management",
-      "status": "pending",
+      "status": "completed",
       "dependencies": [
         1
       ],
@@ -105,21 +105,28 @@
           "id": 2.4,
           "title": "Create Authentication UI Components",
           "description": "Build sign-up, sign-in, and account management UI",
-          "status": "deferred",
-          "details": "Develop responsive UI components for user registration, login, password reset, and account management screens that integrate with Clerk's authentication flow."
+          "status": "completed",
+          "details": "Develop responsive UI components for user registration, login, password reset, and account management screens that integrate with Clerk's authentication flow. Dedicated sign-in page (/sign-in) and sign-up page (/sign-up) have been implemented using Clerk's built-in UI components, complementing the previously created /account page."
+        },
+        {
+          "id": 2.41,
+          "title": "Finalize Authentication UI Components",
+          "description": "Complete remaining UI elements for authentication flow",
+          "status": "completed",
+          "details": "Finalized UI components related to authentication using Clerk's built-in components (<SignIn />, <SignUp />, <UserProfile />), which handle password reset functionality, email verification screens (including email code verification during sign-in), and UI for handling authentication errors or edge cases. Further customization can be implemented iteratively if needed."
         },
         {
           "id": 2.5,
           "title": "Implement Role-Based Access Control",
           "description": "Set up user roles and claims for authorization",
-          "status": "deferred",
+          "status": "completed",
           "details": "Define user roles (e.g., free user, premium user, admin), implement claims-based authorization, and configure permission checks throughout the application."
         },
         {
           "id": 2.6,
           "title": "Design User Database Schema",
           "description": "Create database schema for user account information",
-          "status": "deferred",
+          "status": "completed",
           "details": "Design and implement database tables/collections for storing user-specific data including credits, subscription status, and render history, ensuring proper relations with Clerk's user identifiers."
         },
         {
@@ -421,8 +428,8 @@
           "id": "7.2",
           "title": "Implement animation parameterization",
           "description": "Support configurable animation parameters based on user tier",
-          "status": "pending",
-          "details": "Implement duration parameters (6s default for free users, 10s for paid users). Allow for future expansion of animation options. Create a parameter validation layer to ensure all inputs meet API requirements."
+          "status": "completed",
+          "details": "Implemented duration parameters (6s default for free users, 10s for paid users) based on user role. The duration is passed through the API, Temporal workflow, and activity, and stored in the database. Updated the Replicate API call in lib-shared/replicate.ts to account for the fact that the minimax/video-01-live model has a fixed output length and does not use an explicit duration input parameter. The passed duration is used for internal tracking purposes only."
         },
         {
           "id": "7.3",

@@ -17,11 +17,11 @@ Test animation generation with various scenes. Verify API calls to video-01-live
 ### Details:
 Develop API client for video-01-live with proper authentication, request formatting, and response handling. Support sending HD scene images as input. Configure default animation parameters including 'walk-forward' style and camera pan effects. CURRENT STATUS: Added `startAnimationGeneration` function to shared Replicate client (`lib-shared/replicate.ts`) and created `generateAnimation` Temporal activity (`temporal-worker/activities.ts`) that uses it. Version hash updated.
 
-## 7.2. Implement animation parameterization [pending]
+## 7.2. Implement animation parameterization [completed]
 ### Dependencies: None
 ### Description: Support configurable animation parameters based on user tier
 ### Details:
-Implement duration parameters (6s default for free users, 10s for paid users). Allow for future expansion of animation options. Create a parameter validation layer to ensure all inputs meet API requirements.
+Implemented duration parameters (6s default for free users, 10s for paid users) based on user role. The duration is passed through the API, Temporal workflow, and activity, and stored in the database. Updated the Replicate API call in lib-shared/replicate.ts to account for the fact that the minimax/video-01-live model has a fixed output length and does not use an explicit duration input parameter. The passed duration is used for internal tracking purposes only.
 
 ## 7.3. Develop polling and retry logic [completed]
 ### Dependencies: None

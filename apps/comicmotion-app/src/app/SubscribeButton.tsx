@@ -1,10 +1,37 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 
 export function SubscribeButton() {
   const [loading, setLoading] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const { user } = useUser();
+
+  // Check subscription status from both Clerk metadata and database
+  useEffect(() => {
+    if (user) {
+      // First check Clerk metadata
+      if (user.publicMetadata?.isSubscribed) {
+        setIsSubscribed(true);
+        return;
+      }
+
+      // Then verify with database check
+      const checkSubscription = async () => {
+        try {
+          const res = await fetch('/api/check-subscription');
+          const data = await res.json();
+          if (data.isSubscribed) {
+            setIsSubscribed(true);
+          }
+        } catch (error) {
+          console.error("Failed to check subscription status:", error);
+        }
+      };
+
+      checkSubscription();
+    }
+  }, [user]);
 
   const handleSubscribe = async () => {
     setLoading(true);
@@ -22,7 +49,7 @@ export function SubscribeButton() {
     }
   };
 
-  if (user?.publicMetadata?.isSubscribed) {
+  if (isSubscribed) {
     return <div className="text-green-700">You are already subscribed!</div>;
   }
 

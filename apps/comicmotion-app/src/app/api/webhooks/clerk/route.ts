@@ -1,6 +1,7 @@
 import { Webhook } from 'svix'
 // import { headers } from 'next/headers' // No longer needed if using req.headers
 import { WebhookEvent } from '@clerk/nextjs/server'
+import { users } from "@clerk/clerk-sdk-node"; // Import Clerk SDK users
 import { PrismaClient, Prisma } from 'db'; // Assuming 'db' maps to your Prisma package & import Prisma namespace
 
 const prisma = new PrismaClient();
@@ -65,46 +66,77 @@ export async function POST(req: Request) {
 
   // --- Handle Specific Events ---
 
-  if (eventType === 'user.created' || eventType === 'user.updated') {
-    const { id: clerkId, email_addresses, created_at, updated_at } = evt.data;
+  if (eventType === 'user.created') {
+    const { id: clerkId, email_addresses, created_at, updated_at, public_metadata } = evt.data;
 
-    // Assuming the primary email address is the one to store
     const primaryEmail = email_addresses?.find(email => email.id === evt.data.primary_email_address_id)?.email_address;
 
     if (!primaryEmail) {
-        console.warn(`Webhook Error: User ${clerkId} has no primary email address.`);
-        // Decide if you want to proceed without email or return an error
-        // For now, we'll skip the update if no primary email is found
-         return new Response('Webhook Error: No primary email address found for user.', { status: 400 });
+        console.warn(`Webhook Error: User ${clerkId} (created) has no primary email address.`);
+        return new Response('Webhook Error: No primary email address found for user.', { status: 400 });
     }
 
     try {
-      // Upsert the user: Create if not exists, update if exists
-      await prisma.user.upsert({
-        where: { clerkId: clerkId },
-        update: {
-          // Fields to update on existing user
-          email: primaryEmail,
-          updatedAt: new Date(updated_at), // Use timestamp from Clerk event
-          // Add other fields to update if needed (e.g., username, profile image url)
-          // Be cautious about overwriting fields like 'credits' unless intended
-        },
-        create: {
-          // Fields to set when creating a new user
+      // Create the user in Prisma
+      await prisma.user.create({
+        data: {
           clerkId: clerkId,
           email: primaryEmail,
-          credits: 5, // Default credits for new user as per PRD/Schema
-          createdAt: new Date(created_at), // Use timestamp from Clerk event
+          credits: 5, // Default credits for new user
+          createdAt: new Date(created_at),
           updatedAt: new Date(updated_at),
-          // Add other default fields if needed
         },
       });
-      console.log(`Successfully upserted user with Clerk ID: ${clerkId}`);
+      console.log(`Successfully created user in DB with Clerk ID: ${clerkId}`);
+
+      // Set default role in Clerk publicMetadata
+      try {
+        await users.updateUser(clerkId, { publicMetadata: { ...public_metadata, role: "free" } });
+        console.log(`Successfully set role='free' in Clerk publicMetadata for user ${clerkId}`);
+      } catch (clerkError) {
+        console.error(`Clerk API error setting role for user ${clerkId}:`, clerkError);
+        // Don't fail the whole webhook for this, but log it
+      }
+
     } catch (dbError) {
-      console.error(`Database error upserting user ${clerkId}:`, dbError);
-      return new Response('Error occurred: Failed to update database.', {
+      console.error(`Database error creating user ${clerkId}:`, dbError);
+      return new Response('Error occurred: Failed to create user in database.', {
         status: 500
-      })
+      });
+    }
+  } else if (eventType === 'user.updated') {
+    const { id: clerkId, email_addresses, updated_at } = evt.data;
+    const primaryEmail = email_addresses?.find(email => email.id === evt.data.primary_email_address_id)?.email_address;
+
+    if (!primaryEmail) {
+        console.warn(`Webhook Error: User ${clerkId} (updated) has no primary email address.`);
+        // Potentially skip update or handle as error
+        return new Response('Webhook Error: No primary email address found for user.', { status: 400 });
+    }
+
+    try {
+      // Update the user in Prisma
+      await prisma.user.update({
+        where: { clerkId: clerkId },
+        data: {
+          email: primaryEmail,
+          updatedAt: new Date(updated_at),
+        },
+      });
+      console.log(`Successfully updated user in DB with Clerk ID: ${clerkId}`);
+      // Note: Role updates are typically handled by subscription events or admin actions,
+      // not general user.updated events, to avoid overwriting existing roles.
+    } catch (dbError) {
+      // Handle case where user might not exist in DB yet if webhook ordering is unusual
+      if (dbError instanceof Prisma.PrismaClientKnownRequestError && dbError.code === 'P2025') {
+        console.warn(`User ${clerkId} not found in DB during user.updated event. Consider creating or logging.`);
+        // Optionally, you could attempt to create the user here if that's desired behavior
+      } else {
+        console.error(`Database error updating user ${clerkId}:`, dbError);
+        return new Response('Error occurred: Failed to update user in database.', {
+            status: 500
+        });
+      }
     }
   } else if (eventType === 'user.deleted') {
     const { id: clerkId } = evt.data;

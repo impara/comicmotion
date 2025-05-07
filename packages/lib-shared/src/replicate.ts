@@ -163,7 +163,7 @@ export async function getPredictionStatus(predictionId: string) {
  * @returns The initial prediction object from Replicate.
  * @throws An error if the Replicate API call fails.
  */
-export async function startAnimationGeneration(sceneImageUrl: string, durationSeconds: number = 6) { // Default duration from PRD might not be directly usable
+export async function startAnimationGeneration(sceneImageUrl: string, durationSeconds: number = 6) {
   if (!replicate.auth) {
     throw new Error('Replicate API token is not configured.');
   }
@@ -172,20 +172,18 @@ export async function startAnimationGeneration(sceneImageUrl: string, durationSe
   const modelIdentifier = 'minimax/video-01-live:4bce7c1730a5fc582699fb7e630c2e39c3dd4ddb11ca87fa3b7f0fc52537dd09'; 
   const modelVersion = modelIdentifier.split(':')[1];
 
-  // Construct the input based on user cURL example for minimax/video-01-live
-  // TODO: Reconcile with PRD/TSD requirements (duration, animation_style, camera_pan)
-  // - duration might be implicit or a different parameter.
-  // - animation_style ('walk-forward') & camera_pan ('mild') might need to be included in the prompt.
+  // Construct the input for minimax/video-01-live
+  // Note: The durationSeconds parameter is for internal tracking and database storage.
+  // The minimax/video-01-live model itself does not accept a direct duration input;
+  // it generates a video of a fixed standard length (approx. 6 seconds).
   const input = {
-    // Use field name from cURL example:
     first_frame_image: sceneImageUrl, 
-    // Example prompt - needs refinement based on PRD/TSD requirements
-    prompt: "Animate the scene with a walk-forward style and mild camera pan.", // Combine styles into prompt
-    prompt_optimizer: true, // From cURL example
-    // duration: durationSeconds, // Parameter not shown in cURL, might be ignored or different name
+    prompt: "Animate the scene with a walk-forward style and mild camera pan.", // Example prompt
+    prompt_optimizer: true, 
+    // No explicit duration field for this model. The passed 'durationSeconds' is for internal logic.
   };
 
-  console.log(`Starting Replicate animation prediction for model: ${modelIdentifier}`);
+  console.log(`Starting Replicate animation prediction for model: ${modelIdentifier}. Intended duration (internal): ${durationSeconds}s`);
   console.log(`Input payload: ${JSON.stringify(input)}`);
 
   try {

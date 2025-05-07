@@ -6,6 +6,13 @@ import { getTemporalClient } from '@/lib/temporalClient'; // Adjust path if nece
 
 const prisma = new PrismaClient();
 
+// Define an interface for your custom public metadata to ensure type safety
+interface CustomPublicMetadata {
+  role?: 'free' | 'premium' | 'admin';
+  isSubscribed?: boolean;
+  // Add other custom fields here if they exist
+}
+
 // TODO: Define the theme enum based on available themes in Task 5
 const sceneThemes = ['city', 'fantasy', 'neon'] as const;
 
@@ -16,10 +23,15 @@ const generateSceneSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const { userId: clerkId } = await auth(); // Renamed to clerkId for clarity
+  const { userId: clerkId, sessionClaims } = await auth(); // Get sessionClaims here
   if (!clerkId) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
+
+  // Determine user role for duration parameterization
+  const publicMetadata = sessionClaims?.publicMetadata as CustomPublicMetadata | undefined;
+  const userRole = publicMetadata?.role;
+  const durationSeconds = userRole === 'premium' ? 10 : 6;
 
   // --- Look up internal database user ID from Clerk ID ---
   let dbUser;
@@ -102,6 +114,7 @@ export async function POST(request: NextRequest) {
           userId: internalUserId, // <<< PASS INTERNAL DB ID TO WORKFLOW
           theme: theme,
           avatarUrl: avatarUrl,
+          durationSeconds: durationSeconds, // Pass determined duration
       }], 
       // TODO: Define appropriate workflow execution timeout
       // workflowExecutionTimeout: '5 minutes',

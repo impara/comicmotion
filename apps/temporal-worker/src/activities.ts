@@ -411,28 +411,23 @@ export async function generateAnimation(input: GenerateAnimationInput): Promise<
   const workflowId = Context.current().info.workflowExecution.workflowId;
   console.log(`[Activity:generateAnimation][${workflowId}] Started. SceneId: ${sceneId}`);
 
-  let animationRecord = null; // Placeholder for DB record
+  let animationRecord = null; 
   let predictionId: string | null = null;
   let finalMinioUrl = '';
+  let replicateAnimationUrl: string | null = null; // Defined here to be accessible in the final update
 
   try {
-    // 1. Create/Update initial Animation record in DB (Placeholder)
-    const placeholderAnimationId = `anim_${sceneId}`;
-    console.log(`[Activity:generateAnimation][${workflowId}] Placeholder: Would create/update Animation record ID: ${placeholderAnimationId} to status 'processing_animation'.`);
-    /* 
-    // Example DB Logic:
-    animationRecord = await prisma.animation.upsert({
-        where: { sceneId: sceneId }, // Assuming sceneId is unique link
-        update: { status: 'processing_animation', replicateId: null, error: null, durationRequested: durationSeconds || 6 },
-        create: {
+    // 1. Create initial Animation record in DB
+    console.log(`[Activity:generateAnimation][${workflowId}] Creating Animation DB record for sceneId: ${sceneId}`);
+    animationRecord = await prisma.animation.create({
+        data: {
             userId: userId,
-            sceneId: sceneId,
+            sceneId: sceneId, 
             status: 'processing_animation',
-            durationRequested: durationSeconds || 6,
+            duration: durationSeconds || 6, 
         },
     });
-    console.log(`[Activity:generateAnimation][${workflowId}] Created/Updated Animation record ID: ${animationRecord.id}`);
-    */
+    console.log(`[Activity:generateAnimation][${workflowId}] Created Animation record ID: ${animationRecord.id}`);
 
     // 2. Start Replicate animation prediction
     console.log(`[Activity:generateAnimation][${workflowId}] Starting Replicate animation prediction...`);
@@ -440,18 +435,16 @@ export async function generateAnimation(input: GenerateAnimationInput): Promise<
     predictionId = prediction.id;
     console.log(`[Activity:generateAnimation][${workflowId}] Replicate animation prediction started. ID: ${predictionId}`);
 
-    // Update Animation record with Replicate ID (Placeholder)
-    console.log(`[Activity:generateAnimation][${workflowId}] Placeholder: Would update Animation record ${placeholderAnimationId} with Replicate ID: ${predictionId}`);
-    /*
+    // Update Animation record with Replicate ID
     await prisma.animation.update({
       where: { id: animationRecord.id },
       data: { replicateId: predictionId },
     });
-    */
+    console.log(`[Activity:generateAnimation][${workflowId}] Updated Animation record ${animationRecord.id} with Replicate ID: ${predictionId}`);
 
     // 3. Polling loop for animation completion (moved inside activity)
     const startTime = Date.now();
-    let replicateAnimationUrl: string | null = null;
+    // let replicateAnimationUrl: string | null = null; // Moved to broader scope
 
     console.log(`[Activity:generateAnimation][${workflowId}] Starting polling loop for prediction ${predictionId}...`);
     while (Date.now() - startTime < ANIMATION_TIMEOUT_MS) {
@@ -501,7 +494,7 @@ export async function generateAnimation(input: GenerateAnimationInput): Promise<
     const contentType = response.headers.get('content-type') || 'video/mp4';
     // Determine extension carefully, default to mp4 as required by PRD
     const fileExtension = contentType.startsWith('video/') ? contentType.split('/')[1] : 'mp4'; 
-    const animationKey = `assets/${userId}/${placeholderAnimationId}/animation.${fileExtension}`; // Use placeholder ID
+    const animationKey = `assets/${userId}/${animationRecord.id}/animation.${fileExtension}`; // Use animation ID
 
     console.log(`[Activity:generateAnimation][${workflowId}] Uploading animation buffer to MinIO. Key: ${animationKey}`);
     Context.current().heartbeat('Uploading animation to MinIO...'); // Heartbeat before upload
@@ -519,18 +512,17 @@ export async function generateAnimation(input: GenerateAnimationInput): Promise<
     }
     console.log(`[Activity:generateAnimation][${workflowId}] Final MinIO URL: ${finalMinioUrl}`);
 
-    // 5. Update Animation record on successful completion (Placeholder)
-    console.log(`[Activity:generateAnimation][${workflowId}] Placeholder: Would update Animation record ${placeholderAnimationId} with status 'completed' and URL: ${finalMinioUrl}`);
-    /*
+    // 5. Update Animation record on successful completion
     await prisma.animation.update({
       where: { id: animationRecord.id },
       data: {
         status: 'completed', 
-        animationUrl: finalMinioUrl, 
+        videoUrl: finalMinioUrl, 
+        // replicateOutput: replicateAnimationUrl, // Removed this field as it's not in the schema
         error: null,
       },
     });
-    */
+    console.log(`[Activity:generateAnimation][${workflowId}] Animation record ${animationRecord.id} updated to completed.`);
 
     // Return the final URL
     return { finalAnimationUrl: finalMinioUrl };
@@ -539,37 +531,26 @@ export async function generateAnimation(input: GenerateAnimationInput): Promise<
     const errorMessage = error instanceof Error ? error.message : 'Unknown activity error';
     console.error(`[Activity:generateAnimation][${workflowId}] An error occurred:`, error);
     
-    // Attempt to update Animation record to failed status (Placeholder)
-    const placeholderAnimationId = `anim_${sceneId}`;
-    console.warn(`[Activity:generateAnimation][${workflowId}] Placeholder: Attempting to mark Animation record ${placeholderAnimationId} as failed.`);
-    /*
-    if (animationRecord?.id || placeholderAnimationId) { // Use actual or placeholder ID
-        const recordId = animationRecord?.id || placeholderAnimationId; 
-        console.warn(`[Activity:generateAnimation][${workflowId}] Attempting to mark Animation record ${recordId} as failed.`);
+    if (animationRecord?.id) { 
+        console.warn(`[Activity:generateAnimation][${workflowId}] Attempting to mark Animation record ${animationRecord.id} as failed.`);
         try {
-             // Use upsert to handle cases where initial record creation might have failed but prediction started
-             await prisma.animation.upsert({
-                 where: { sceneId: sceneId }, // Or use ID if available
-                 update: { 
+             await prisma.animation.update({
+                 where: { id: animationRecord.id },
+                 data: { 
                      status: 'failed', 
                      ...(predictionId && { replicateId: predictionId }), 
                      error: errorMessage.substring(0, 1000) 
-                 },
-                 create: {
-                    userId: userId,
-                    sceneId: sceneId,
-                    status: 'failed',
-                    replicateId: predictionId,
-                    durationRequested: durationSeconds || 6,
-                    error: errorMessage.substring(0, 1000)
                  }
              });
-             console.warn(`[Activity:generateAnimation][${workflowId}] Marked Animation record ${recordId} as failed.`);
+             console.warn(`[Activity:generateAnimation][${workflowId}] Marked Animation record ${animationRecord.id} as failed.`);
         } catch (dbUpdateError) {
-            console.error(`[Activity:generateAnimation][${workflowId}] CRITICAL: Failed to update animation ${recordId} status to failed:`, dbUpdateError);
+            console.error(`[Activity:generateAnimation][${workflowId}] CRITICAL: Failed to update animation ${animationRecord.id} status to failed:`, dbUpdateError);
         }
+    } else {
+        console.error(`[Activity:generateAnimation][${workflowId}] Error occurred before animation record could be created for sceneId: ${sceneId}.`);
+        // Optionally, create a failed record here if desired for tracking, ensuring all required fields like 'duration' are provided.
+        // Example: await prisma.animation.create({ data: { userId, sceneId, status: 'failed', error: errorMessage.substring(0,1000), replicateId: predictionId, duration: durationSeconds || 6 }});
     }
-    */
     
     throw error; // Rethrow the original error
   }

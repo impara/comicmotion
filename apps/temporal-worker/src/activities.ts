@@ -350,13 +350,55 @@ export async function generateScene(input: GenerateSceneInput): Promise<Generate
 export async function markAvatarAsFailed(avatarId: string, errorMessage: string): Promise<void> {
   console.warn(`[Activity:markAvatarAsFailed] Marking avatar ${avatarId} as failed: ${errorMessage}`);
   try {
-     await prisma.avatar.update({
-         where: { id: avatarId },
-         data: { 
-             status: 'failed', 
-             error: errorMessage
-         }
-     });
+    // Attempt to find the avatar to get the userId for credit refund
+    const avatar = await prisma.avatar.findUnique({
+      where: { id: avatarId },
+      select: { userId: true },
+    });
+
+    if (avatar && avatar.userId) {
+      const userId = avatar.userId;
+      console.log(`[Activity:markAvatarAsFailed] Attempting to refund 1 credit to userId: ${userId} for failed avatarId: ${avatarId}`);
+      try {
+        await prisma.$transaction(async (tx) => {
+          // Increment user's credits
+          await tx.user.update({
+            where: { id: userId },
+            data: { credits: { increment: 1 } },
+          });
+
+          // Log the refund in RenderHistory
+          await tx.renderHistory.create({
+            data: {
+              userId: userId,
+              avatarId: avatarId,
+              status: 'failed', // Reflects the avatar status
+              step: 'credit_refund_avatar_failure',
+              error: `Credit refund of 1 processed for failed avatar ${avatarId}. Original error: ${errorMessage.substring(0, 200)}`, // Keep error concise
+              creditsConsumed: 0, // This specific entry is about refund, not consumption
+            },
+          });
+        });
+        console.log(`[Activity:markAvatarAsFailed] Successfully refunded 1 credit and logged to RenderHistory for userId: ${userId}, avatarId: ${avatarId}`);
+      } catch (refundError) {
+        console.error(`[Activity:markAvatarAsFailed] CRITICAL: Failed to process credit refund for userId: ${userId}, avatarId: ${avatarId}:`, refundError);
+        // Log this error but do not rethrow, to ensure avatar status update still happens.
+        // The avatar status update is the primary goal of this compensation activity.
+      }
+    } else {
+      console.warn(`[Activity:markAvatarAsFailed] Could not find avatar or userId for avatarId: ${avatarId}. Skipping credit refund.`);
+    }
+
+    // Original logic to update avatar status
+    await prisma.avatar.update({
+        where: { id: avatarId },
+        data: {
+            status: 'failed',
+            error: errorMessage // Store the original error message
+        }
+    });
+    console.log(`[Activity:markAvatarAsFailed] Successfully marked avatar ${avatarId} as failed in DB.`);
+
   } catch (dbError) {
     console.error(`[Activity:markAvatarAsFailed] CRITICAL: Failed to update avatar ${avatarId} status to failed:`, dbError);
     // Even if DB update fails, we might not want to fail the *compensation* activity itself

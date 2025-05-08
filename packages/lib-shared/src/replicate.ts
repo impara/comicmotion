@@ -47,6 +47,9 @@ export async function startAvatarGeneration(imageUrl: string, prompt: string) {
       quality: "auto",         // Default from cURL
       background: "auto",      // Default from cURL
       moderation: "auto",      // Default from cURL
+      negative_prompt: "",     // Added: Default empty negative prompt
+      num_inference_steps: 30, // Added: Default number of inference steps
+      guidance_scale: 7.0,     // Added: Default CFG scale
       // openai_api_key: "",   // Leave empty as per cURL example
       openai_api_key: process.env.OPENAI_API_KEY, // Add the OpenAI API key from env
       // Add any other required parameters for the model
@@ -199,7 +202,8 @@ export async function startAnimationGeneration(sceneImageUrl: string, durationSe
     return prediction; // Return the initial prediction object
   } catch (error) {
     console.error('Error starting Replicate animation prediction:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     // TODO: Implement more specific error handling based on Replicate errors (7.6)
-    throw new Error('Failed to start Replicate animation generation.');
+    throw new Error(`Failed to start Replicate animation generation: ${errorMessage}`);
   }
-} 
+}

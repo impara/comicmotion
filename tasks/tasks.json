@@ -266,14 +266,14 @@
           "id": 4.6,
           "title": "Compensation Logic",
           "description": "Implement credit refund system for failed generations",
-          "status": "pending",
+          "status": "completed",
           "details": "Create a compensation service or logic to refund credits when avatar generation fails (e.g., OpenAI API error, content policy violation). Implement transaction logging for all credit refunds. Add admin dashboard component to review and manage compensation events. Ensure proper synchronization to prevent duplicate refunds."
         },
         {
           "id": 4.7,
           "title": "Implement Advanced Avatar Parameters",
           "description": "Incorporate detailed parameters from the storyboard spec (steps, cfg_scale, negative prompts, quality, aspect_ratio, input_images) into the Replicate API call for avatar generation. Acknowledge that seed handling is not supported by openai/gpt-image-1, and visual consistency will rely on consistent prompting and using the avatar as an input image for scene generation.",
-          "status": "pending"
+          "status": "completed"
         }
       ]
     },

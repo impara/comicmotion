@@ -53,9 +53,9 @@ function ThemeSelectionContent() {
         body: JSON.stringify({ 
           avatarId, 
           theme: themeId, 
-          action, 
-          emotion, 
-          sfx 
+          userAction: action, 
+          userEmotion: emotion, 
+          userSfx: sfx 
         }),
       });
 

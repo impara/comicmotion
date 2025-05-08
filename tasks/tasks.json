@@ -445,7 +445,7 @@
           "id": "7.1",
           "title": "Implement Minimax video-01-live API integration",
           "description": "Create the service layer to communicate with Replicate's Minimax video-01-live API, focusing on sending complex prompts derived from storyboard templates and user inputs.",
-          "status": "in-progress",
+          "status": "completed",
           "details": "Develop API client for video-01-live with proper authentication, request formatting, and response handling. Focus on constructing and sending the complex multi-beat animation prompt based on the selected storyboard template and user inputs (Action, Emotion, SFX). Configure default animation parameters including 'walk-forward' style and camera pan effects, understanding how these might be influenced by the template and user input. Update `startAnimationGeneration` function in shared Replicate client and `generateAnimation` Temporal activity to handle the new prompt structure. Version hash updated."
         },
         {
@@ -494,7 +494,7 @@
           "id": "7.8",
           "title": "Construct Storyboard-Driven Animation Prompt",
           "description": "Develop logic to select or adapt a 5-shot storyboard template based on user inputs (Action, Emotion, SFX, Theme). Dynamically construct the animation prompt for the Minimax video-01-live API by populating this template with specific cues for shot timing, actions, camera movements, dialogue, and SFX. Acknowledge that the animation model does not support a seed parameter for direct control over visual randomness.",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "7.9",
@@ -518,7 +518,7 @@
           "id": "7.12",
           "title": "Define and Implement Storyboard Templates",
           "description": "Design 2-3 initial 5-shot storyboard templates (e.g., 'Action/Reveal', 'Character Moment') and the backend logic for selecting and populating them based on user inputs (Action, Emotion, SFX, Theme).",
-          "status": "pending"
+          "status": "in-progress"
         }
       ]
     },

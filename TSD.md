@@ -89,7 +89,7 @@ Key patterns applied:
 | Method | Path | Request | Response |
 |--------|------|---------|----------|
 | `POST` | `/api/upload` | Multipart selfie | `{uploadUrl}` |
-| `POST` | `/api/render` | `{theme, duration, selfieUrl}` | `{jobId}` |
+| `POST` | `/api/render` | `{avatarId, theme, action, emotion, sfx, duration}` | `{jobId}` |
 | `GET` | `/api/job/:id` | – | `{status, assets}` |
 
 **Data Models (simplified TS types)**
@@ -102,6 +102,9 @@ type JobStatus =
   | 'scene_done'
   | 'video_done'
   | 'failed';
+// The JobStatus or a supplementary field might be expanded in the future
+// to reflect progress through individual storyboard shots if detailed UI
+// feedback is required for animation generation.
 interface JobProgress {
   id: string;
   userId: string;
@@ -156,6 +159,8 @@ API-->>FE: 202 jobId
 ---
 
 ### 5.3 Temporal Orchestrator _(Core TDS)_
+
+_Activity A3 (GenerateVideo) takes the generated scene and user inputs (theme, action, emotion, sfx, duration) to dynamically construct a 5-shot storyboard prompt. This prompt is then sent to the `minimax/video-01-live` model via the Replicate Adapter to generate the final animation. The activity handles polling for completion and storing the result._
 
 | Step | Activity       | Replicate Model Used    | Retries | Compensating Action         |
 | ---- | -------------- | ----------------------- | ------- | --------------------------- |

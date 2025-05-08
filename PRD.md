@@ -39,19 +39,19 @@ Short-form video dominates social feeds, but creating eye-catching animated cont
 
 Core flow only; templates, audio, and API in later releases.
 
-| Step | Requirement                                                       | Priority |
-| ---- | ----------------------------------------------------------------- | -------- |
-| 1    | Upload selfie (JPG/PNG ≤8 MB)                                     | P0       |
-| 2    | Call GPT-Image-1 → full-body comic avatar (1024×1024)             | P0       |
-| 3    | Display 3 "theme" thumbnails (city, fantasy, neon)                | P0       |
-| 4    | Generate 1920 × 1080 scene with selected theme                    | P0       |
-| 5    | Animate scene to 6- or 10-second MP4 via video-01-live            | P0       |
-| 6    | Progress tracker & ETA                                            | P0       |
-| 7    | Download MP4 or copy share-link                                   | P0       |
-| 8    | Sign-up/login, credit counter, Stripe billing                     | P0       |
-| 9    | Content safety filter (OpenAI moderation + imghash nudity detect) | P0       |
-| 10   | Render history & delete request ("Right to Erasure")              | P1       |
-| 11   | Watermark for Free tier, toggled off for paid                     | P1       |
+| Step | Requirement                                                                                                                                                             | Priority |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 1    | Upload selfie (JPG/PNG ≤8 MB)                                                                                                                                           | P0       |
+| 2    | Call GPT-Image-1 → full-body comic avatar (1024×1024)                                                                                                                   | P0       |
+| 3    | Display 3 "theme" thumbnails (city, fantasy, neon)                                                                                                                      | P0       |
+| 4    | Generate 1920 × 1080 scene with selected theme                                                                                                                          | P0       |
+| 5    | Animate scene into a 5-shot video (6- or 10-second MP4) using Minimax video-01-live, driven by user inputs (Action, Emotion, SFX) and pre-defined storyboard templates. | P0       |
+| 6    | Progress tracker & ETA                                                                                                                                                  | P0       |
+| 7    | Download MP4 or copy share-link                                                                                                                                         | P0       |
+| 8    | Sign-up/login, credit counter, Stripe billing                                                                                                                           | P0       |
+| 9    | Content safety filter (OpenAI moderation + imghash nudity detect)                                                                                                       | P0       |
+| 10   | Render history & delete request ("Right to Erasure")                                                                                                                    | P1       |
+| 11   | Watermark for Free tier, toggled off for paid                                                                                                                           | P1       |
 
 Out-of-scope for v1:  
 • Audio/music overlay, • API endpoints, • Mobile app, • Fine-tuned personal avatar.
@@ -77,9 +77,11 @@ Out-of-scope for v1:
 
 ##### 6.4 Animation Service
 
-- Send HD scene to video-01-live with default "walk-forward" animation & mild camera pan.
-- Allow duration param (6 s default, 10 s for paid).
-- On completion, transcode to H.264 MP4, 30 fps.
+- The Animation Service will take the generated HD scene and user inputs (Action, Emotion, SFX, selected Theme) to:
+  1. Select or adapt a pre-defined 5-shot storyboard template.
+  2. Dynamically construct a complex prompt for the Replicate `minimax/video-01-live` model. This prompt will include cues for shot timing, character actions (derived from user's 'Action' input), emotional expression (derived from user's 'Emotion' input), camera movements (based on template and potentially user emphasis), and SFX (derived from user's 'SFX' input and template).
+  3. Support animation duration parameters (e.g., 6 seconds default, 10 seconds for paid users) by adjusting the timing of specific shots within the storyboard.
+  4. On completion, the service will transcode the output to H.264 MP4 at 30fps (if not already in that format) and store it.
 
 ##### 6.5 Credits & Billing
 
@@ -90,6 +92,7 @@ Out-of-scope for v1:
 ##### 6.6 Frontend
 
 - Next.js pages: `/upload`, `/themes`, `/progress`, `/download`, `/account`.
+- The `/themes` page (or a subsequent step during the theme selection process) will include UI elements for users to input their desired Action/Goal (e.g., text input), Emotion/Tone (e.g., dropdown or tags), and optional SFX/Emphasis (e.g., dropdown or tags) to guide the storyboard generation.
 - Real-time progress via WebSocket channel from queue worker.
 
 ##### 6.7 Admin Dashboard
@@ -120,6 +123,7 @@ Out-of-scope for v1:
 - Clean, card-based steps (Progress: 1 ▶ 2 ▶ 3).
 - Show a looping skeleton loader GIF while polling Replicate.
 - Theme picker uses hover previews (static thumbnails).
+- The theme selection/storyboard input phase will guide users through providing simple inputs (Action, Emotion, SFX) to personalize their animation.
 - Failure modal with friendly copy & "Try again (no credit charge)".
 
 #### 10. Dependencies

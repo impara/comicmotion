@@ -16,10 +16,13 @@ interface CustomPublicMetadata {
 // TODO: Define the theme enum based on available themes in Task 5
 const sceneThemes = ['city', 'fantasy', 'neon'] as const;
 
-// Expect avatarId and theme in the request body
+// Expect avatarId, theme, and new narrative inputs in the request body
 const generateSceneSchema = z.object({
   avatarId: z.string().cuid(), // Assuming CUID for avatar ID
   theme: z.enum(sceneThemes),
+  userAction: z.string().min(1, "Action is required").max(100, "Action is too long"), // Added
+  userEmotion: z.string().min(1, "Emotion is required").max(50, "Emotion is too long"), // Added
+  userSfx: z.string().max(30, "SFX is too long").optional(), // Added, optional
 });
 
 export async function POST(request: NextRequest) {
@@ -66,7 +69,7 @@ export async function POST(request: NextRequest) {
     return new NextResponse('Invalid request body', { status: 400 });
   }
 
-  const { avatarId, theme } = validatedData;
+  const { avatarId, theme, userAction, userEmotion, userSfx } = validatedData;
 
   try {
     // 1. Verify Avatar exists, belongs to user, and has a URL
@@ -115,6 +118,10 @@ export async function POST(request: NextRequest) {
           theme: theme,
           avatarUrl: avatarUrl,
           durationSeconds: durationSeconds, // Pass determined duration
+          // Pass new narrative inputs
+          userAction: userAction, 
+          userEmotion: userEmotion,
+          userSfx: userSfx,
       }], 
       // TODO: Define appropriate workflow execution timeout
       // workflowExecutionTimeout: '5 minutes',

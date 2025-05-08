@@ -64,7 +64,7 @@ export function getSceneGenerationPrompt(theme: string, avatarImageUrl: string):
     return {
         input_images: [avatarImageUrl], // Pass the generated avatar URL
         prompt: fullPrompt, 
-        aspect_ratio: "16:9", // Target 1920x1080 for scenes
+        aspect_ratio: "3:2", // Changed from "16:9" to a valid option
         number_of_images: 1,
         output_format: "png", // Or "webp"
         quality: "auto",
@@ -75,17 +75,124 @@ export function getSceneGenerationPrompt(theme: string, avatarImageUrl: string):
     };
 }
 
-// --- Replicate Video Generation --- //
+// --- Replicate Video Generation (Storyboard-Driven) --- //
 
-// TODO: Define input parameters for video generation - Subtask 7.1
-export function getVideoGenerationInput(sceneImageUrl: string, durationSeconds: number): object {
-    // Placeholder - needs specific model input structure for video-01-live
+interface StoryboardShot {
+  generateText: (inputs: AnimationInputData, shotParams?: any) => string;
+}
+
+interface StoryboardTemplate {
+  id: string;
+  name: string;
+  shots: StoryboardShot[];
+  adaptForDuration?: (shotTexts: string[], durationSeconds: number) => string[];
+}
+
+const simpleActionRevealTemplate: StoryboardTemplate = {
+  id: 'simpleActionReveal',
+  name: 'Simple Action Reveal',
+  shots: [
+    { // Shot 1: Intro
+      generateText: (inputs) => `The character, ${inputs.characterDescription || 'as seen in the image'}, stands confidently, looking ${inputs.userEmotion || 'neutral'}. ${inputs.themeDetails?.setting || 'In a fitting environment'}.`
+    },
+    { // Shot 2: Action Start
+      generateText: (inputs) => `They begin to ${inputs.userAction || 'move'}. The camera subtly draws closer, focusing on their intense expression.`
+    },
+    { // Shot 3: Climax/SFX
+      generateText: (inputs) => `At the peak of the action, ${inputs.userSfx ? `the words '${inputs.userSfx.toUpperCase()}' flash brightly! ` : ''}A surge of energy is visible.`
+    },
+    { // Shot 4: Reaction/Reveal
+      generateText: (inputs) => `A look of surprise crosses their face as ${inputs.themeDetails?.revealElement || 'something unexpected'} is revealed before them.`
+    },
+    { // Shot 5: Outro
+      generateText: (inputs) => `They gaze at the ${inputs.themeDetails?.revealedElementName || 'revelation'} in awe as the scene gently fades.`
+    },
+  ],
+  adaptForDuration: (shotTexts, durationSeconds) => {
+    if (durationSeconds > 8) { // Arbitrary threshold for "longer"
+      if (shotTexts[1]) shotTexts[1] += " Every detail of their movement is clear.";
+      if (shotTexts[3]) shotTexts[3] += " The air crackles around the revealed object.";
+    }
+    return shotTexts;
+  }
+};
+
+const storyboardTemplates: Record<string, StoryboardTemplate> = {
+  simpleActionReveal: simpleActionRevealTemplate,
+  // Add more templates here
+};
+
+interface ThemeSpecificDetails {
+  setting?: string;
+  revealElement?: string;
+  revealedElementName?: string;
+}
+
+export interface AnimationInputData { // Exporting for use in other parts of the application if needed
+  characterDescription?: string;
+  theme: string;
+  userAction: string;
+  userEmotion: string;
+  userSfx?: string;
+  durationSeconds: number;
+  // themeDetails will be populated internally by getAnimationGenerationInput
+  themeDetails?: ThemeSpecificDetails; 
+}
+
+export function getAnimationGenerationInput(
+  sceneImageUrl: string,
+  inputs: AnimationInputData,
+  templateId: string = 'simpleActionReveal'
+): object {
+
+  const selectedTemplate = storyboardTemplates[templateId];
+  if (!selectedTemplate) {
+    console.warn(`Storyboard template "${templateId}" not found. Using default 'simpleActionReveal'.`);
+    // Fallback to default if templateId is invalid or not found
+    const defaultTemplate = storyboardTemplates['simpleActionReveal'];
+    if (!defaultTemplate) { // Should not happen if simpleActionReveal is always defined
+        throw new Error("Default storyboard template 'simpleActionReveal' is missing.");
+    }
+    // In a real scenario, you might want to throw an error or handle this more gracefully
+    // For now, let's proceed with a warning and use the default if the selected one isn't found.
+    // This part of the logic might need refinement based on how template selection is handled upstream.
+  }
+
+  let currentTemplate = selectedTemplate || storyboardTemplates['simpleActionReveal'];
+  if (!currentTemplate) { // Final check, mainly for type safety if defaultTemplate was also undefined
+    throw new Error("Could not resolve a storyboard template.");
+  }
+
+
+  let populatedThemeDetails: ThemeSpecificDetails = {};
+  switch (inputs.theme.toLowerCase()) {
+    case 'city':
+      populatedThemeDetails = { setting: "In a bustling downtown area,", revealElement: "a hidden alleyway entrance", revealedElementName: "alleyway" };
+      break;
+    case 'fantasy':
+      populatedThemeDetails = { setting: "In an ancient, mystical forest,", revealElement: "a glowing, ancient rune stone", revealedElementName: "rune stone" };
+      break;
+    case 'neon':
+      populatedThemeDetails = { setting: "On a rain-slicked cyberpunk street,", revealElement: "a flickering, secret data port", revealedElementName: "data port" };
+      break;
+    default:
+      console.warn(`No specific theme details for theme: ${inputs.theme}. Using generic descriptions.`);
+      populatedThemeDetails = { setting: "In a fitting environment,", revealElement: "something unexpected", revealedElementName: "revelation" };
+  }
+
+  const fullInputs = { ...inputs, themeDetails: populatedThemeDetails };
+
+  let shotTexts = currentTemplate.shots.map(shot => shot.generateText(fullInputs));
+
+  if (currentTemplate.adaptForDuration) {
+    shotTexts = currentTemplate.adaptForDuration(shotTexts, inputs.durationSeconds);
+  }
+
+  const narrativePrompt = shotTexts.join(" Then, "); 
+
     return {
-        image: sceneImageUrl,
-        animation_style: 'walk-forward', // Default from PRD
-        camera_pan: 'mild', // Default from PRD
-        duration: durationSeconds,
-        fps: 30, // Required output fps
-        // Add other necessary model parameters
+    first_frame_image: sceneImageUrl,
+    prompt: narrativePrompt,
+    prompt_optimizer: true,
     };
 } 

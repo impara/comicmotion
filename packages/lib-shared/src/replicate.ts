@@ -1,5 +1,10 @@
 import Replicate from 'replicate';
-import { getSceneGenerationPrompt } from './prompts';
+import { 
+    getSceneGenerationPrompt, 
+    getAvatarGenerationPrompt, 
+    getAnimationGenerationInput, 
+    type AnimationInputData
+} from './prompts';
 
 // Initialize the Replicate client using the API token from environment variables
 const replicate = new Replicate({
@@ -162,43 +167,47 @@ export async function getPredictionStatus(predictionId: string) {
  * Starts an animation generation prediction on Replicate using Minimax video-01-live.
  * 
  * @param sceneImageUrl The URL of the generated scene image (1920x1080).
- * @param durationSeconds The desired duration of the video (default: 6s, paid: 10s - // TODO: Implement parameterization 7.2).
+ * @param animationData Object containing theme, user inputs, and duration for storyboard prompting.
  * @returns The initial prediction object from Replicate.
  * @throws An error if the Replicate API call fails.
  */
-export async function startAnimationGeneration(sceneImageUrl: string, durationSeconds: number = 6) {
+export async function startAnimationGeneration(
+  sceneImageUrl: string, 
+  animationData: AnimationInputData 
+) {
   if (!replicate.auth) {
     throw new Error('Replicate API token is not configured.');
   }
 
-  // Use the correct model identifier and provided version hash
   const modelIdentifier = 'minimax/video-01-live:4bce7c1730a5fc582699fb7e630c2e39c3dd4ddb11ca87fa3b7f0fc52537dd09'; 
   const modelVersion = modelIdentifier.split(':')[1];
 
-  // Construct the input for minimax/video-01-live
-  // Note: The durationSeconds parameter is for internal tracking and database storage.
-  // The minimax/video-01-live model itself does not accept a direct duration input;
-  // it generates a video of a fixed standard length (approx. 6 seconds).
-  const input = {
-    first_frame_image: sceneImageUrl, 
-    prompt: "Animate the scene with a walk-forward style and mild camera pan.", // Example prompt
-    prompt_optimizer: true, 
-    // No explicit duration field for this model. The passed 'durationSeconds' is for internal logic.
-  };
+  // Construct the input using the new function from prompts.ts
+  const input = getAnimationGenerationInput(sceneImageUrl, animationData);
 
-  console.log(`Starting Replicate animation prediction for model: ${modelIdentifier}. Intended duration (internal): ${durationSeconds}s`);
-  console.log(`Input payload: ${JSON.stringify(input)}`);
+  console.log(`Starting Replicate animation prediction for model: ${modelIdentifier}. Intended duration (internal): ${animationData.durationSeconds}s`);
+  // Log the detailed prompt being sent, safely accessing the prompt property
+  if (typeof input === 'object' && input !== null && 'prompt' in input && typeof (input as any).prompt === 'string') {
+    console.log(`Constructed narrative prompt: ${(input as {prompt: string}).prompt}`);
+  } else {
+    // Fallback log if prompt is not a string or input is not as expected
+    console.log(`Input payload (structure or prompt format unexpected): ${JSON.stringify(input)}`);
+  }
 
   try {
     const prediction = await replicate.predictions.create({
       version: modelVersion, 
-      input: input,
+      input: input, // Use the fully constructed input object
       // TODO: Implement webhook for completion updates (part of Task 8)
       // webhook: 'YOUR_WEBHOOK_URL',
       // webhook_events_filter: ['completed']
     });
 
     console.log(`Replicate animation prediction started: ${prediction.id}`);
+    // Immediately check for initial failure
+    if (prediction.status === 'failed') {
+        throw new Error(`Replicate animation prediction failed immediately: ${prediction.error}`);
+    }
     return prediction; // Return the initial prediction object
   } catch (error) {
     console.error('Error starting Replicate animation prediction:', error);

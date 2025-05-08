@@ -218,8 +218,8 @@
     {
       "id": 4,
       "title": "Implement Avatar Generation Service",
-      "description": "Create a service to transform selfies into comic avatars using Replicate's openai/gpt-image-1 model.",
-      "status": "completed",
+      "description": "Create a service to transform selfies into comic avatars using Replicate's openai/gpt-image-1 model, incorporating advanced prompting.",
+      "status": "in-progress",
       "dependencies": [
         3
       ],
@@ -236,8 +236,8 @@
         },
         {
           "id": 4.2,
-          "title": "System Prompt Design",
-          "description": "Design and implement effective prompts for comic avatar generation using GPT-image-1",
+          "title": "Design and implement effective prompts for comic avatar generation using GPT-image-1",
+          "description": "Refine prompts for avatar generation based on the 'Storyboard-Driven Generation' guidelines, including SYSTEM, USER, and NEGATIVE prompts, ensuring output quality and style.",
           "status": "completed",
           "details": "Research optimal prompting techniques for GPT-image-1. Design prompts that consistently produce full-body comic avatars at 1024x1024 resolution. Test various prompt formulations to ensure consistent quality and style. Consider how to incorporate user selfie details if using the edit endpoint. CURRENT STATUS: Basic prompt implemented and used via getAvatarGenerationPrompt in lib-shared. Marked complete, but may need refinement later."
         },
@@ -268,14 +268,20 @@
           "description": "Implement credit refund system for failed generations",
           "status": "pending",
           "details": "Create a compensation service or logic to refund credits when avatar generation fails (e.g., OpenAI API error, content policy violation). Implement transaction logging for all credit refunds. Add admin dashboard component to review and manage compensation events. Ensure proper synchronization to prevent duplicate refunds."
+        },
+        {
+          "id": 4.7,
+          "title": "Implement Advanced Avatar Parameters",
+          "description": "Incorporate detailed parameters from the storyboard spec (steps, cfg_scale, negative prompts, quality, aspect_ratio, input_images) into the Replicate API call for avatar generation. Acknowledge that seed handling is not supported by openai/gpt-image-1, and visual consistency will rely on consistent prompting and using the avatar as an input image for scene generation.",
+          "status": "pending"
         }
       ]
     },
     {
       "id": 5,
       "title": "Implement theme selection interface",
-      "description": "Create UI for displaying and selecting theme options for the scene",
-      "status": "completed",
+      "description": "Create UI for displaying theme options and collecting user inputs (Action, Emotion, SFX) to drive the guided storyboard narrative.",
+      "status": "in-progress",
       "dependencies": [
         4
       ],
@@ -307,7 +313,7 @@
         {
           "id": 5.4,
           "title": "Create theme prompt mapping system",
-          "description": "Develop mapping between theme selections and prompt variations",
+          "description": "Develop mapping between theme selections and elements (like color palettes, environmental details) that populate the dynamic 5-shot storyboard templates, ensuring theme consistency.",
           "status": "completed",
           "details": "Implement a system that maps each theme selection to appropriate prompt variations for the AI generation pipeline. Define prompt templates for each theme that can be populated with scene content. Document the mapping structure for future theme additions. CURRENT STATUS: Implemented getSceneGenerationPrompt in lib-shared/prompts.ts. Generates theme-specific base prompts and example Replicate input object. Specific parameters need tuning for the chosen model."
         },
@@ -331,14 +337,20 @@
           "description": "Ensure theme selection UI works across different screen sizes",
           "status": "completed",
           "details": "Adapt the theme selection interface for various screen sizes and devices. Implement responsive layout adjustments, touch-friendly interactions for mobile, and ensure accessibility standards are met across all viewport sizes. CURRENT STATUS: Responsive grid layout (1, 2, then 3 columns) implemented using Tailwind. Padding and gaps adjusted for responsiveness."
+        },
+        {
+          "id": 5.8,
+          "title": "Add UI Inputs for Guided Narrative Beats",
+          "description": "Modify the theme selection UI to include inputs for user-defined Action/Goal (text), Emotion/Tone (dropdown/tags), and optional SFX/Emphasis (dropdown/tags) to drive the storyboard.",
+          "status": "pending"
         }
       ]
     },
     {
       "id": 6,
       "title": "Build scene generation service",
-      "description": "Create a service to generate themed backgrounds with the avatar using Replicate's openai/gpt-image-1 model.",
-      "status": "completed",
+      "description": "Create a service to generate themed backgrounds with the avatar using Replicate's openai/gpt-image-1 model, incorporating advanced prompting and conditioning images.",
+      "status": "in-progress",
       "dependencies": [
         4,
         5
@@ -357,7 +369,7 @@
         {
           "id": 6.2,
           "title": "Develop theme-specific prompt templates",
-          "description": "Create and test prompts suitable for openai/gpt-image-1 scene generation",
+          "description": "Create and test prompts suitable for openai/gpt-image-1 scene generation, incorporating theme details and guided narrative inputs to influence scene content and composition.",
           "status": "completed",
           "details": "Develop a library of prompt templates for each available theme, instructing openai/gpt-image-1 to generate the scene incorporating the input avatar image. CURRENT STATUS: Basic prompt templates defined in lib-shared/prompts.ts (getSceneGenerationPrompt). Updated to match openai/gpt-image-1 input structure. Further refinement may be needed based on results."
         },
@@ -402,34 +414,46 @@
           "description": "Connect scene generation service with the overall application flow",
           "status": "completed",
           "details": "Integrate scene generation into the main application workflow. Update UI to display scene generation status. Implement transitions between avatar creation and scene generation. Test end-to-end user flow with various scenarios. CURRENT STATUS: Backend API (/api/scene/generate) and Temporal workflow (generateSceneWorkflow) are implemented. Frontend theme selection page now correctly calls API to start scene/animation workflow and navigates to progress page with the correct workflow ID. Progress page polling implemented to fetch real status from backend API (/api/generate/status/[workflowId]). Frontend integration is in progress."
+        },
+        {
+          "id": 6.9,
+          "title": "Implement Scene Generation with Visual Consistency",
+          "description": "Ensure visual consistency between the generated avatar and scene. Acknowledge that the openai/gpt-image-1 model does not support seed locking. Achieve consistency through careful prompt engineering, utilizing supported parameters (quality, aspect_ratio), and leveraging the avatar image as an input for scene generation (Task 6.10).",
+          "status": "pending"
+        },
+        {
+          "id": 6.10,
+          "title": "Utilize Avatar as Conditioning Image for Scene",
+          "description": "Modify the scene generation activity to use the generated avatar (preserving transparency) as a conditioning image input for the Replicate API call, according to the storyboard specification.",
+          "status": "pending"
         }
       ]
     },
     {
       "id": 7,
       "title": "Develop animation service",
-      "description": "Create a service to animate the generated scene into a short video",
+      "description": "Create a service to animate the generated scene into a 5-shot video based on guided narrative inputs and pre-defined templates using Minimax video-01-live.",
       "status": "in-progress",
       "dependencies": [
         6
       ],
       "priority": "high",
-      "details": "Implement a service that sends the HD scene to Replicate's video-01-live API with default 'walk-forward' animation and mild camera pan. Support duration parameters (6s default, 10s for paid users). Implement polling for job completion. Transcode completed animations to H.264 MP4 at 30fps. Store the resulting video URL and associate it with the user's session. Handle error cases appropriately with compensation mechanisms to rollback scene on failure.",
-      "testStrategy": "Test animation generation with various scenes. Verify API calls to video-01-live work correctly. Test both duration options. Confirm proper transcoding to MP4 format. Verify video quality and framerate. Test error handling for failed animations. Verify compensation mechanisms work correctly.",
+      "details": "Implement a service that sends the HD scene and a dynamically constructed prompt (based on user inputs and storyboard templates) to Replicate's video-01-live API. Support duration parameters (6s default, 10s for paid users) by elongating specific storyboard shots. Implement polling for job completion, transcoding to H.264 MP4 at 30fps, and asset storage. Handle error cases appropriately with compensation mechanisms to rollback scene on failure. Visual consistency will rely on the input scene image and detailed prompt, as the model does not support a seed parameter.",
+      "testStrategy": "Test animation generation with various scenes, user inputs (Action, Emotion, SFX), and duration options. Verify API calls to video-01-live work correctly. Confirm proper transcoding and video quality. Test error handling and compensation mechanisms. Assess visual consistency of the output animation relative to the input scene.",
       "subtasks": [
         {
           "id": "7.1",
           "title": "Implement Minimax video-01-live API integration",
-          "description": "Create the service layer to communicate with Replicate's Minimax video-01-live API",
-          "status": "completed",
-          "details": "Develop API client for video-01-live with proper authentication, request formatting, and response handling. Support sending HD scene images as input. Configure default animation parameters including 'walk-forward' style and camera pan effects. CURRENT STATUS: Added `startAnimationGeneration` function to shared Replicate client (`lib-shared/replicate.ts`) and created `generateAnimation` Temporal activity (`temporal-worker/activities.ts`) that uses it. Version hash updated."
+          "description": "Create the service layer to communicate with Replicate's Minimax video-01-live API, focusing on sending complex prompts derived from storyboard templates and user inputs.",
+          "status": "in-progress",
+          "details": "Develop API client for video-01-live with proper authentication, request formatting, and response handling. Focus on constructing and sending the complex multi-beat animation prompt based on the selected storyboard template and user inputs (Action, Emotion, SFX). Configure default animation parameters including 'walk-forward' style and camera pan effects, understanding how these might be influenced by the template and user input. Update `startAnimationGeneration` function in shared Replicate client and `generateAnimation` Temporal activity to handle the new prompt structure. Version hash updated."
         },
         {
           "id": "7.2",
           "title": "Implement animation parameterization",
-          "description": "Support configurable animation parameters based on user tier",
-          "status": "completed",
-          "details": "Implemented duration parameters (6s default for free users, 10s for paid users) based on user role. The duration is passed through the API, Temporal workflow, and activity, and stored in the database. Updated the Replicate API call in lib-shared/replicate.ts to account for the fact that the minimax/video-01-live model has a fixed output length and does not use an explicit duration input parameter. The passed duration is used for internal tracking purposes only."
+          "description": "Support configurable animation duration based on user tier by elongating specific storyboard shots (e.g., shots 3-4) for paid users.",
+          "status": "in-progress",
+          "details": "Update logic to adjust the duration of the animation by extending specific beats within the storyboard template for paid users (e.g., increasing the time for dialogue or action shots). Ensure the duration parameter passed to the workflow and activity correctly reflects the total desired video length, even if the API doesn't directly consume it, for internal tracking. Updated the Replicate API call in lib-shared/replicate.ts to account for the fact that the minimax/video-01-live model has a fixed output length and does not use an explicit duration input parameter. The passed duration is used for internal tracking purposes only."
         },
         {
           "id": "7.3",
@@ -465,13 +489,43 @@
           "description": "Create comprehensive tests for the animation service",
           "status": "pending",
           "details": "Develop integration tests covering the full animation workflow. Test with various scene inputs to verify compatibility. Verify proper handling of both success and failure scenarios. Test compensation mechanisms. Create performance benchmarks for animation generation time."
+        },
+        {
+          "id": "7.8",
+          "title": "Construct Storyboard-Driven Animation Prompt",
+          "description": "Develop logic to select or adapt a 5-shot storyboard template based on user inputs (Action, Emotion, SFX, Theme). Dynamically construct the animation prompt for the Minimax video-01-live API by populating this template with specific cues for shot timing, actions, camera movements, dialogue, and SFX. Acknowledge that the animation model does not support a seed parameter for direct control over visual randomness.",
+          "status": "pending"
+        },
+        {
+          "id": "7.9",
+          "title": "Map Camera Path Keywords to Animation Controls",
+          "description": "Implement a system to interpret 'camera path keywords' (e.g., 'slow push-in', 'dutch tilt', 'zoom-out') associated with storyboard templates and translate them into appropriate animation parameters or instructions for the video generation model.",
+          "status": "pending"
+        },
+        {
+          "id": "7.10",
+          "title": "Integrate TTS and SSML for Lip-Sync",
+          "description": "Integrate a Text-to-Speech (TTS) service to generate audio for dialogue. Modify the animation prompt generation to include SSML phoneme tags for precise lip-sync with the video generation model, if supported or via a separate audio track.",
+          "status": "pending"
+        },
+        {
+          "id": "7.11",
+          "title": "Implement SFX Layering in Animation",
+          "description": "Develop functionality to incorporate SFX text (e.g., 'WHOOSH!') into the animation, potentially by adding specific instructions to the prompt or exploring post-processing techniques.",
+          "status": "pending"
+        },
+        {
+          "id": "7.12",
+          "title": "Define and Implement Storyboard Templates",
+          "description": "Design 2-3 initial 5-shot storyboard templates (e.g., 'Action/Reveal', 'Character Moment') and the backend logic for selecting and populating them based on user inputs (Action, Emotion, SFX, Theme).",
+          "status": "pending"
         }
       ]
     },
     {
       "id": 8,
       "title": "Implement progress tracking system",
-      "description": "Create a real-time progress tracking system with ETA for the generation process",
+      "description": "Create a real-time progress tracking system that reflects progression through the 5-shot storyboard beats with ETA for the generation process.",
       "status": "in-progress",
       "dependencies": [
         4,
@@ -485,8 +539,8 @@
         {
           "id": "8.1",
           "title": "Design and implement real-time progress UI component",
-          "description": "Create a responsive UI component that shows the current generation step, progress percentage, and estimated time remaining",
-          "status": "completed",
+          "description": "Create a responsive UI component that shows the current generation step (e.g., corresponding to storyboard shots), progress percentage, and estimated time remaining. Update the UI to visually represent progression through the 5 storyboard beats.",
+          "status": "in-progress",
           "details": "Follow the card-based step design from the PRD (Progress: 1 ▶ 2 ▶ 3). Implement state transitions and animations between steps. Include visual indicators for completed, current, and pending steps. CURRENT STATUS: Basic page structure created at /progress/[jobId]. Reads jobId, displays step indicators, and shows simulated status updates. Uses icons for different states. Progress page UI now driven by real data polled from backend status API, replacing mock simulation. Implemented Temporal query handler in workflow and updated status API to provide specific stage (scene vs. animation). Frontend polling now uses this stage for more accurate progress bar display."
         },
         {
@@ -534,7 +588,7 @@
         {
           "id": "8.8",
           "title": "Integrate with Temporal query handler for detailed progress tracking",
-          "description": "Leverage the implemented Temporal query handler to enhance progress tracking granularity",
+          "description": "Leverage the implemented Temporal query handler to enhance progress tracking granularity, providing updates that correspond to the progression through the 5 storyboard shots.",
           "status": "pending",
           "details": "Build upon the Temporal query handler implementation to further enhance progress tracking. Ensure the WebSocket implementation can utilize the stage-specific information (scene vs. animation) provided by the status API. Implement additional UI refinements to take advantage of the more granular progress information."
         }
@@ -1033,11 +1087,63 @@
           "details": "Configure Prometheus and Grafana for real-time performance monitoring. Set up alerts for critical thresholds. Create dashboards for API performance, queue metrics, and error rates. Document baseline performance metrics."
         }
       ]
+    },
+    {
+      "id": 16,
+      "title": "Implement Storyboard Visual & Stylistic Guidelines",
+      "description": "Implement the comprehensive 'Visual Language & Look-and-Feel' and 'Visual Consistency Matrix' guidelines from the Storyboard-Driven Generation proposal. This involves refining prompt engineering across all generation stages, potentially exploring asset post-processing, and ensuring strict adherence to the specified art style, color palettes, composition rules, camera work, motion characteristics, and typography. Note: Seed locking for palette consistency applies to Avatar and Scene generation (using openai/gpt-image-1); animation consistency relies on the input scene and prompt.",
+      "status": "pending",
+      "dependencies": [4, 6, 7],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 16.1,
+          "title": "Define and Implement Cel-Shading & Inking Style via Prompts",
+          "description": "Focus on refining prompts for all models (Avatar, Scene, Animation) to achieve the 'Clean cel-shading, bold inking (≈ 3 px stroke), subtle halftone on mid-tones, soft rim light' style.",
+          "status": "pending"
+        },
+        {
+          "id": 16.2,
+          "title": "Implement Triadic Palette System via Seed Locking & Prompts",
+          "description": "Develop logic to apply high-contrast triadic color schemes based on theme templates, primarily driven by seed-locking and descriptive color cues in prompts, ensuring palette consistency.",
+          "status": "pending"
+        },
+        {
+          "id": 16.3,
+          "title": "Enforce Compositional Rules via Prompts",
+          "description": "Refine prompts to guide AI models towards the 'rule of thirds' and specified framing (e.g., Medium full-body, Half-body) for hero shots within the storyboard structure.",
+          "status": "pending"
+        },
+        {
+          "id": 16.4,
+          "title": "Implement 2.5D Parallax Effect for Animation",
+          "description": "Configure animation parameters or investigate post-processing to achieve the specified 8-12% background shift for a parallax effect during animation.",
+          "status": "pending"
+        },
+        {
+          "id": 16.5,
+          "title": "Standardize Animation Motion (FPS & Easing)",
+          "description": "Ensure animation generation uses 24-30 fps and incorporates ease-in/out curves, likely as parameters or instructions for the video generation model.",
+          "status": "pending"
+        },
+        {
+          "id": 16.6,
+          "title": "Implement 'Bangers' Font for Comic SFX",
+          "description": "Investigate methods to apply the 'Bangers' Google font (white stroke 4px) for SFX text overlays in the animation, either via the video model capabilities or post-processing.",
+          "status": "pending"
+        },
+        {
+          "id": 16.7,
+          "title": "Ensure Visual Consistency Across Stages",
+          "description": "Systematically apply guidelines from the 'Visual Consistency Matrix' (line weight, halftone frequency, lighting) through prompt engineering and potentially post-processing to ensure a cohesive look across avatar, scene, and animation.",
+          "status": "pending"
+        }
+      ]
     }
   ],
   "metadata": {
     "projectName": "ComicMotion Implementation",
-    "totalTasks": 15,
+    "totalTasks": 16,
     "sourceFile": "/home/amer/workspace/comicMotion/PRD.md",
     "generatedAt": "2023-11-15"
   }

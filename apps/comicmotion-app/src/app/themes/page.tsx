@@ -13,7 +13,6 @@ function ThemeSelectionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
   const [avatarId, setAvatarId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,15 +28,15 @@ function ThemeSelectionContent() {
     }
   }, [searchParams]);
 
-  const handleThemeSelected = (themeId: string) => {
-    setSelectedThemeId(themeId);
-    setError(null); // Clear previous errors on new selection
-    console.log('Theme Selected:', themeId);
-  };
+  const handleSubmitSelections = async (selections: { themeId: string; action: string; emotion: string; sfx: string }) => {
+    const { themeId, action, emotion, sfx } = selections;
 
-  const handleGenerateScene = async () => {
-    if (!selectedThemeId || !avatarId) {
+    if (!themeId || !avatarId) {
       setError("Please select a theme and ensure avatar information is available.");
+      return;
+    }
+    if (!action || !emotion) { // SFX is optional
+      setError("Please provide Action/Goal and Emotion/Tone.");
       return;
     }
 
@@ -45,13 +44,19 @@ function ThemeSelectionContent() {
     setError(null);
 
     try {
-      console.log(`Generating scene with Avatar ID: ${avatarId} and Theme: ${selectedThemeId}`);
+      console.log(`Generating scene with Avatar ID: ${avatarId}, Theme: ${themeId}, Action: ${action}, Emotion: ${emotion}, SFX: ${sfx}`);
       const response = await fetch('/api/scene/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ avatarId, theme: selectedThemeId }),
+        body: JSON.stringify({ 
+          avatarId, 
+          theme: themeId, 
+          action, 
+          emotion, 
+          sfx 
+        }),
       });
 
       if (!response.ok) {
@@ -81,21 +86,16 @@ function ThemeSelectionContent() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <ThemeSelector onThemeSelect={handleThemeSelected} />
+      <ThemeSelector onSubmitSelections={handleSubmitSelections} />
 
       {error && (
         <p className="text-center text-red-600 mt-4">{error}</p>
       )}
 
-      {selectedThemeId && avatarId && (
-        <div className="text-center mt-8">
-          <button 
-            onClick={handleGenerateScene} 
-            disabled={isLoading || !avatarId}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Generating...' : 'Generate Scene'}
-          </button>
+      {isLoading && (
+        <div className="text-center mt-4">
+          <p className="text-lg font-semibold">Processing your request...</p>
+          {/* You might want a more sophisticated loading indicator here */}
         </div>
       )}
     </div>

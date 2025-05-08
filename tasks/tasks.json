@@ -342,7 +342,7 @@
           "id": 5.8,
           "title": "Add UI Inputs for Guided Narrative Beats",
           "description": "Modify the theme selection UI to include inputs for user-defined Action/Goal (text), Emotion/Tone (dropdown/tags), and optional SFX/Emphasis (dropdown/tags) to drive the storyboard.",
-          "status": "pending"
+          "status": "completed"
         }
       ]
     },

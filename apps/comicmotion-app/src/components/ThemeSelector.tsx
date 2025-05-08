@@ -36,25 +36,42 @@ const THEMES: Theme[] = [
 ];
 
 interface ThemeSelectorProps {
-  onThemeSelect: (themeId: string) => void;
+  onSubmitSelections: (selections: { themeId: string; action: string; emotion: string; sfx: string }) => void;
 }
 
-export function ThemeSelector({ onThemeSelect }: ThemeSelectorProps) {
+export function ThemeSelector({ onSubmitSelections }: ThemeSelectorProps) {
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
+  const [action, setAction] = useState('');
+  const [emotion, setEmotion] = useState('');
+  const [sfx, setSfx] = useState('');
 
-  const handleSelect = (themeId: string) => {
+  const handleThemeSelect = (themeId: string) => {
     setSelectedTheme(themeId);
-    onThemeSelect(themeId);
   };
 
+  const handleSubmit = () => {
+    if (selectedTheme) {
+      onSubmitSelections({
+        themeId: selectedTheme,
+        action,
+        emotion,
+        sfx,
+      });
+    }
+  };
+
+  // Define some sample options for dropdowns - these can be expanded
+  const emotionOptions = ['Happy', 'Sad', 'Angry', 'Excited', 'Mysterious', 'Calm'];
+  const sfxOptions = ['None', 'Whoosh', 'Bang', 'Clang', 'Zap', 'Boing'];
+
   return (
-    <div className="w-full max-w-5xl mx-auto px-2 sm:px-4">
-      <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-6 sm:mb-8">Step 2: Choose Your Scene Theme</h2>
+    <div className="w-full max-w-5xl mx-auto px-2 sm:px-4 py-8">
+      <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-6 sm:mb-8">Step 2: Choose Your Scene Theme & Narrative Beats</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
         {THEMES.map((theme) => (
           <div
             key={theme.id}
-            onClick={() => handleSelect(theme.id)}
+            onClick={() => handleThemeSelect(theme.id)}
             className={`
               group border rounded-lg p-3 sm:p-4 cursor-pointer transition-all duration-300 
               hover:shadow-xl hover:scale-[1.03] hover:border-blue-400 
@@ -77,6 +94,66 @@ export function ThemeSelector({ onThemeSelect }: ThemeSelectorProps) {
           </div>
         ))}
       </div>
+
+      {selectedTheme && (
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <h3 className="text-xl font-semibold text-center mb-6">Step 3: Define Narrative Beats</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div>
+              <label htmlFor="action" className="block text-sm font-medium text-gray-700 mb-1">
+                Action / Goal
+              </label>
+              <input
+                type="text"
+                name="action"
+                id="action"
+                value={action}
+                onChange={(e) => setAction(e.target.value)}
+                placeholder="e.g., Exploring ancient ruins"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+              />
+            </div>
+            <div>
+              <label htmlFor="emotion" className="block text-sm font-medium text-gray-700 mb-1">
+                Emotion / Tone
+              </label>
+              <select
+                name="emotion"
+                id="emotion"
+                value={emotion}
+                onChange={(e) => setEmotion(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+              >
+                <option value="">Select Emotion...</option>
+                {emotionOptions.map(opt => <option key={opt} value={opt.toLowerCase()}>{opt}</option>)}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="sfx" className="block text-sm font-medium text-gray-700 mb-1">
+                SFX / Emphasis (Optional)
+              </label>
+              <select
+                name="sfx"
+                id="sfx"
+                value={sfx}
+                onChange={(e) => setSfx(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+              >
+                {sfxOptions.map(opt => <option key={opt} value={opt.toLowerCase()}>{opt}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="text-center">
+            <button
+              onClick={handleSubmit}
+              disabled={!selectedTheme || !action || !emotion} // SFX is optional
+              className="px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              Generate Comic!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

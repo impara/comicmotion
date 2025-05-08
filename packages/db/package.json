@@ -4,9 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "exit 0",
-    "build": "npm run db:generate",
+    "build": "npm run db:generate && tsc",
     "prisma:init": "prisma init --datasource-provider postgresql",
-    "db:generate": "prisma generate",
+    "db:generate": "npx prisma generate",
     "db:push": "prisma db push",
     "postinstall": "npx prisma generate"
   },
@@ -21,7 +21,7 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "devDependencies": {
-    "prisma": "^5.17.0",
+    "prisma": "^6.7.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }

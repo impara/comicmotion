@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from 'db';
 import { getTemporalClient } from '@/lib/temporalClient'; // Import Temporal client
 import { WorkflowNotFoundError } from '@temporalio/client';
@@ -23,14 +23,12 @@ interface JobStatusResponse {
 }
 
 export async function GET(
-  request: Request, 
-  // Correctly define context type for route handlers
-  context: { params: { id: string } } 
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<JobStatusResponse | { error: string }>> {
   // TODO: Add authentication
 
-  // <<< Access params correctly >>>
-  const { id: avatarId } = context.params; 
+  const { id: avatarId } = await params;
 
   if (!avatarId) {
     return NextResponse.json({ error: 'Job ID (Avatar ID) is required' }, { status: 400 });

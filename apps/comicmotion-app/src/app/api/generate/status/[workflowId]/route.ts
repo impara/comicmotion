@@ -3,11 +3,11 @@ import { getTemporalClient } from '@/lib/temporalClient'; // Adjust path if nece
 import { WorkflowNotFoundError } from '@temporalio/client';
 
 // Define the expected parameters in the URL path
-interface RouteContext {
-  params: {
-    workflowId: string;
-  };
-}
+// interface RouteContext {
+//   params: {
+//     workflowId: string;
+//   };
+// }
 
 // Define possible workflow statuses relevant to the frontend
 type WorkflowStatus =
@@ -34,7 +34,8 @@ interface StatusResponse {
   error?: string;
 }
 
-export async function GET(request: NextRequest, context: RouteContext) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function GET(request: NextRequest, context: any) {
   const { workflowId } = context.params;
 
   if (!workflowId) {

@@ -16,6 +16,7 @@
       ]
     },
     "lint": {},
-    "test": {}
+    "test": {},
+    "db#build": { "outputs": ["dist/**"] }
   }
 }

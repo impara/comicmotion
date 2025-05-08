@@ -23,7 +23,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: "npm"
+          cache: 'npm'
           cache-dependency-path: apps/comicmotion-app/package-lock.json
 
       # Cache Turborepo build cache for faster builds
@@ -57,6 +57,7 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_CLERK_SIGN_IN_URL: ${{ secrets.NEXT_PUBLIC_CLERK_SIGN_IN_URL }}
           NEXT_PUBLIC_CLERK_SIGN_UP_URL: ${{ secrets.NEXT_PUBLIC_CLERK_SIGN_UP_URL }}
@@ -67,6 +68,7 @@ jobs:
           echo "STRIPE_SECRET_KEY exists: $( [[ -z "${STRIPE_SECRET_KEY}" ]] && echo "No" || echo "Yes (masked)" )"
           echo "STRIPE_WEBHOOK_SECRET exists: $( [[ -z "${STRIPE_WEBHOOK_SECRET}" ]] && echo "No" || echo "Yes (masked)" )"
           echo "CLERK_SECRET_KEY exists: $( [[ -z "${CLERK_SECRET_KEY}" ]] && echo "No" || echo "Yes (masked)" )"
+          echo "OPENAI_API_KEY exists: $( [[ -z "${OPENAI_API_KEY}" ]] && echo "No" || echo "Yes (masked)" )"
           echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY exists: $( [[ -z "${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}" ]] && echo "No" || echo "Yes" )"
           echo "Listing all env vars containing STRIPE:"
           printenv | grep STRIPE || echo "No STRIPE vars found"
@@ -74,6 +76,8 @@ jobs:
           printenv | grep CLERK || echo "No CLERK vars found"
           echo "Listing all env vars containing NEXT:"
           printenv | grep NEXT || echo "No NEXT vars found"
+          echo "Listing all env vars containing OPENAI:"
+          printenv | grep OPENAI || echo "No OPENAI vars found"
         working-directory: . # Run this at the root where turbo runs
 
       - name: Build
@@ -81,6 +85,7 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_CLERK_SIGN_IN_URL: ${{ secrets.NEXT_PUBLIC_CLERK_SIGN_IN_URL }}
           NEXT_PUBLIC_CLERK_SIGN_UP_URL: ${{ secrets.NEXT_PUBLIC_CLERK_SIGN_UP_URL }}

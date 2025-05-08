@@ -57,14 +57,14 @@ export function getSceneGenerationPrompt(theme: string, avatarImageUrl: string):
 
     // Construct the final prompt for openai/gpt-image-1
     // Instruct it to use the input image within the described scene
-    const fullPrompt = `Create a scene with the following background: "${themeDescription}". Incorporate the character from the input image naturally into this scene. Ensure the overall style remains consistent with the input character.`;
+    const fullPrompt = `Visually integrate the character from the input image (respecting its original form and transparency) into a new scene with the background: \"${themeDescription}\". The final image should meticulously maintain the artistic style (e.g., line weight, coloring, shading, lighting, and overall comic book feel) of the provided input character. The character should appear naturally placed and coherent within the new background.`;
 
     // Return the input object matching the structure for openai/gpt-image-1 via Replicate
     // Derived from the cURL example and previous startAvatarGeneration update.
     return {
         input_images: [avatarImageUrl], // Pass the generated avatar URL
         prompt: fullPrompt, 
-        aspect_ratio: "1:1", // Use a valid aspect ratio for the model
+        aspect_ratio: "16:9", // Target 1920x1080 for scenes
         number_of_images: 1,
         output_format: "png", // Or "webp"
         quality: "auto",

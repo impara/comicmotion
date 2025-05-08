@@ -419,13 +419,13 @@
           "id": 6.9,
           "title": "Implement Scene Generation with Visual Consistency",
           "description": "Ensure visual consistency between the generated avatar and scene. Acknowledge that the openai/gpt-image-1 model does not support seed locking. Achieve consistency through careful prompt engineering, utilizing supported parameters (quality, aspect_ratio), and leveraging the avatar image as an input for scene generation (Task 6.10).",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": 6.10,
           "title": "Utilize Avatar as Conditioning Image for Scene",
           "description": "Modify the scene generation activity to use the generated avatar (preserving transparency) as a conditioning image input for the Replicate API call, according to the storyboard specification.",
-          "status": "pending"
+          "status": "completed"
         }
       ]
     },

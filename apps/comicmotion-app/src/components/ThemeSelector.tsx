@@ -122,10 +122,10 @@ export function ThemeSelector({ onSubmitSelections }: ThemeSelectorProps) {
                 id="emotion"
                 value={emotion}
                 onChange={(e) => setEmotion(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 bg-white text-gray-900"
               >
-                <option value="">Select Emotion...</option>
-                {emotionOptions.map(opt => <option key={opt} value={opt.toLowerCase()}>{opt}</option>)}
+                <option value="" className="text-gray-500">Select Emotion...</option>
+                {emotionOptions.map(opt => <option key={opt} value={opt.toLowerCase()} className="text-gray-900">{opt}</option>)}
               </select>
             </div>
             <div>
@@ -137,9 +137,9 @@ export function ThemeSelector({ onSubmitSelections }: ThemeSelectorProps) {
                 id="sfx"
                 value={sfx}
                 onChange={(e) => setSfx(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 bg-white text-gray-900"
               >
-                {sfxOptions.map(opt => <option key={opt} value={opt.toLowerCase()}>{opt}</option>)}
+                {sfxOptions.map(opt => <option key={opt} value={opt.toLowerCase()} className="text-gray-900">{opt}</option>)}
               </select>
             </div>
           </div>

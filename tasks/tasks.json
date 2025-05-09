@@ -500,7 +500,7 @@
           "id": "7.9",
           "title": "Map Camera Path Keywords to Animation Controls",
           "description": "Implement a system to interpret 'camera path keywords' (e.g., 'slow push-in', 'dutch tilt', 'zoom-out') associated with storyboard templates and translate them into appropriate animation parameters or instructions for the video generation model.",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "7.10",
@@ -512,13 +512,13 @@
           "id": "7.11",
           "title": "Implement SFX Layering in Animation",
           "description": "Develop functionality to incorporate SFX text (e.g., 'WHOOSH!') into the animation, potentially by adding specific instructions to the prompt or exploring post-processing techniques.",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "7.12",
           "title": "Define and Implement Storyboard Templates",
           "description": "Design 2-3 initial 5-shot storyboard templates (e.g., 'Action/Reveal', 'Character Moment') and the backend logic for selecting and populating them based on user inputs (Action, Emotion, SFX, Theme).",
-          "status": "in-progress"
+          "status": "completed"
         }
       ]
     },
